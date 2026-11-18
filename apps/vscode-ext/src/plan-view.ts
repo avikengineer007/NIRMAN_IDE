@@ -22,6 +22,10 @@ export class PlanViewProvider {
 
   public resolveWebviewView(webviewView: IWebviewView): void {
     this.view = webviewView;
+    const wv = webviewView.webview as unknown as { options?: { enableScripts?: boolean } };
+    if (wv) {
+      wv.options = { enableScripts: true };
+    }
     webviewView.webview.html = this.getHtml();
 
     webviewView.webview.onDidReceiveMessage((msg: WebviewToExtensionMessage) => {

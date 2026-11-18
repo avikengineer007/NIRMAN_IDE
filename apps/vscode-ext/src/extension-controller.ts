@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { NirmanClient, type RunRecord } from '@nirman/server';
+import { NirmanClient, type RunRecord } from '@nirman/server/client';
 import type { AgentEvent } from '@nirman/artifacts';
 import { ChatViewProvider } from './chat-view.js';
 import { PlanViewProvider } from './plan-view.js';
@@ -31,6 +31,7 @@ export class ExtensionController {
   public readonly agentManager: AgentManagerViewProvider;
 
   private activeRun: RunRecord | null = null;
+  private isConnected = false;
   private unsubscribeEvents?: (() => void) | undefined;
 
   constructor(options: ExtensionControllerOptions) {
@@ -42,6 +43,7 @@ export class ExtensionController {
       new NirmanClient({
         url: this.config.serverUrl,
         token: this.config.serverToken,
+        timeoutMs: 180_000,
       });
 
     this.chatView = new ChatViewProvider();
@@ -63,7 +65,11 @@ export class ExtensionController {
    */
   public async activate(): Promise<void> {
     await this.client.connect();
+    this.isConnected = true;
 
+    if (this.unsubscribeEvents) {
+      this.unsubscribeEvents();
+    }
     this.unsubscribeEvents = this.client.onEvent((notification) => {
       this.handleAgentEvent(notification.runId, notification.event);
     });
@@ -75,7 +81,15 @@ export class ExtensionController {
     // Chat view delegate
     this.chatView.setDelegate({
       onDescribeProject: async (prompt, skipPlanning) => {
-        await this.startRun(prompt, skipPlanning);
+        try {
+          if (!this.isConnected) {
+            await this.activate();
+          }
+          await this.startRun(prompt, skipPlanning);
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          this.chatView.appendMessage('system', `⚠️ Failed to start run: ${msg}`);
+        }
       },
       onPauseRun: async (runId) => {
         await this.pauseRun(runId);
@@ -85,6 +99,11 @@ export class ExtensionController {
       },
       onCancelRun: async (runId) => {
         await this.cancelRun(runId);
+      },
+      onApproveActivePlan: async () => {
+        if (this.activeRun) {
+          await this.approvePlan(this.activeRun.runId);
+        }
       },
     });
 
@@ -241,7 +260,7 @@ export class ExtensionController {
       skipPlanning,
       modelConfig: {
         model: this.config.model,
-        baseUrl: 'http://127.0.0.1:11434/v1',
+        baseUrl: process.env['NIRMAN_MODEL_URL'] ?? 'http://127.0.0.1:8080/v1',
       },
     });
 

@@ -1,15 +1,27 @@
+import fs from 'node:fs';
 import type { ExtensionContext } from 'vscode';
 import { ExtensionController } from './extension-controller.js';
 import type { IVSCodeAPI } from './vscode-api.js';
 
 let controller: ExtensionController | null = null;
 
+function resolveSessionToken(): string {
+  const envToken = process.env['NIRMAN_SESSION_TOKEN'] ?? process.env['NIRMAN_TOKEN'];
+  if (envToken) return envToken;
+  try {
+    const pidsRaw = fs.readFileSync('C:\\Tools\\nirman\\logs\\pids.json', 'utf-8');
+    const pids = JSON.parse(pidsRaw) as { token?: string };
+    if (pids.token) return pids.token;
+  } catch {}
+  return 'default-token';
+}
+
 export async function activate(context: ExtensionContext, customApi?: IVSCodeAPI): Promise<ExtensionController> {
   const vscodeModule = customApi ?? (await import('vscode'));
   const vscode = vscodeModule as unknown as IVSCodeAPI;
 
   const serverUrl = process.env['NIRMAN_SERVER_URL'] ?? 'ws://127.0.0.1:4096';
-  const serverToken = process.env['NIRMAN_SESSION_TOKEN'] ?? process.env['NIRMAN_TOKEN'] ?? 'default-token';
+  const serverToken = resolveSessionToken();
   const model = 'qwen2.5-coder:7b';
   const contextWindowLimit = 32_768;
 
@@ -28,11 +40,21 @@ export async function activate(context: ExtensionContext, customApi?: IVSCodeAPI
     const win = vscode.window as any;
     try {
       context.subscriptions.push(
-        win.registerWebviewViewProvider('nirman.chat', controller.chatView),
-        win.registerWebviewViewProvider('nirman.plan', controller.planView),
-        win.registerWebviewViewProvider('nirman.tasks', controller.tasksView),
-        win.registerWebviewViewProvider('nirman.artifacts', controller.artifactsView),
-        win.registerWebviewViewProvider('nirman.agentManager', controller.agentManager),
+        win.registerWebviewViewProvider('nirman.chat', controller.chatView, {
+          webviewOptions: { retainContextWhenHidden: true },
+        }),
+        win.registerWebviewViewProvider('nirman.plan', controller.planView, {
+          webviewOptions: { retainContextWhenHidden: true },
+        }),
+        win.registerWebviewViewProvider('nirman.tasks', controller.tasksView, {
+          webviewOptions: { retainContextWhenHidden: true },
+        }),
+        win.registerWebviewViewProvider('nirman.artifacts', controller.artifactsView, {
+          webviewOptions: { retainContextWhenHidden: true },
+        }),
+        win.registerWebviewViewProvider('nirman.agentManager', controller.agentManager, {
+          webviewOptions: { retainContextWhenHidden: true },
+        }),
       );
     } catch {}
   }
@@ -40,10 +62,28 @@ export async function activate(context: ExtensionContext, customApi?: IVSCodeAPI
   // Connect controller to daemon (non-blocking)
   controller.activate().catch(() => {});
 
+  // Automatically reveal the NIRMAN Assistant on the right side (Secondary Side Bar)
+  if (!customApi) {
+    setTimeout(() => {
+      void vscode.commands.executeCommand('nirman.chat.focus');
+    }, 600);
+  }
+
   // Register commands
   context.subscriptions.push(
     vscode.commands.registerCommand('nirman.startRun', async () => {
-      const task = await vscode.window.showInformationMessage('Describe project to NIRMAN:');
+      const win = vscode.window as any;
+      let task: string | undefined;
+      if (typeof win.showInputBox === 'function') {
+        void vscode.commands.executeCommand('nirman.chat.focus');
+        task = await win.showInputBox({
+          title: 'NIRMAN Agentic Studio — Start Project Run',
+          prompt: 'Describe what you want NIRMAN to build, edit, or fix:',
+          placeHolder: 'e.g. Build a personal portfolio website with dark mode and contact form',
+        });
+      } else {
+        task = await vscode.window.showInformationMessage('Describe project to NIRMAN:');
+      }
       if (task) {
         await controller?.startRun(task);
       }

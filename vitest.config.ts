@@ -25,6 +25,7 @@ export default defineConfig({
       '@nirman/security': path.resolve(__dirname, 'packages/security/src/index.ts'),
       '@nirman/browser': path.resolve(__dirname, 'packages/browser/src/index.ts'),
       '@nirman/deploy': path.resolve(__dirname, 'packages/deploy/src/index.ts'),
+      '@nirman/server/client': path.resolve(__dirname, 'packages/server/src/client.ts'),
       '@nirman/server': path.resolve(__dirname, 'packages/server/src/index.ts'),
       '@nirman/eval': path.resolve(__dirname, 'evals/src/index.ts'),
     },

@@ -11,6 +11,8 @@ import type {
   AgentEventNotificationParams,
 } from './types.js';
 
+export type { RunRecord, ArtifactFileInfo };
+
 export interface ClientOptions {
   url: string;
   token: string;
