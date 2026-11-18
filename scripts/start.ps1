@@ -592,8 +592,7 @@ if ($releaseOk) {
 else {
     $teardownFailed = $true
 }
-}
-}
+
 catch {
     $teardownFailed = $true
     Write-Log "ERROR" "Teardown step failed: VRAM release check - $_"
@@ -605,15 +604,14 @@ if (-not $teardownFailed -and $releaseOk) {
 else {
     Write-Log "ERROR" "Session concluded WITH TEARDOWN FAILURES (see above)."
 }
-}
+
 if ($releaseOk) {
     Write-Log "PASS" "VRAM release verified: PID gone and memory.used within ${ToleranceMiB} MiB of baseline."
 }
 else {
     $teardownFailed = $true
 }
-}
-}
+
 catch {
     $teardownFailed = $true
     Write-Log "ERROR" "Teardown step failed: VRAM release check - $_"
@@ -625,15 +623,14 @@ if (-not $teardownFailed -and $releaseOk) {
 else {
     Write-Log "ERROR" "Session concluded WITH TEARDOWN FAILURES (see above)."
 }
-}
+
 if ($releaseOk) {
     Write-Log "PASS" "VRAM release verified: PID gone and memory.used within ${ToleranceMiB} MiB of baseline."
 }
 else {
     $teardownFailed = $true
 }
-}
-}
+
 catch {
     $teardownFailed = $true
     Write-Log "ERROR" "Teardown step failed: VRAM release check - $_"
@@ -645,16 +642,16 @@ if (-not $teardownFailed -and $releaseOk) {
 else {
     Write-Log "ERROR" "Session concluded WITH TEARDOWN FAILURES (see above)."
 }
-}
+
 Write-Log "ERROR" "Teardown step failed: Removing lock file - $_"
-}
 
 # Step D: Remove PIDs file
 try {
     if (Test-Path $PidsFile) {
         Remove-Item $PidsFile -Force -ErrorAction Stop
     }
-} catch {
+}
+catch {
     $teardownFailed = $true
     Write-Log "ERROR" "Teardown step failed: Removing PIDs file - $_"
 }
@@ -681,18 +678,21 @@ try {
         }
         if ($releaseOk) {
             Write-Log "PASS" "VRAM release verified: PID gone and memory.used within ${ToleranceMiB} MiB of baseline."
-        } else {
+        }
+        else {
             $teardownFailed = $true
         }
     }
-} catch {
+}
+catch {
     $teardownFailed = $true
     Write-Log "ERROR" "Teardown step failed: VRAM release check - $_"
 }
 
 if (-not $teardownFailed -and $releaseOk) {
     Write-Log "PASS" "Session concluded; all child processes stopped."
-} else {
+}
+else {
     Write-Log "ERROR" "Session concluded WITH TEARDOWN FAILURES (see above)."
 }
-}
+

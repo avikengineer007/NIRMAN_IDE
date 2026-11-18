@@ -395,6 +395,42 @@ export class ExtensionController {
     });
   }
 
+  private isRealIde(): boolean {
+    return Boolean(
+      this.vscode.window &&
+        typeof (this.vscode.window as unknown as { registerWebviewViewProvider?: unknown })
+          .registerWebviewViewProvider === 'function',
+    );
+  }
+
+  private syncWorktreeToRepo(): void {
+    if (!this.isRealIde() || !this.activeRun) return;
+    const { worktreePath, repoRoot } = this.activeRun;
+    if (!worktreePath || !repoRoot || path.resolve(worktreePath) === path.resolve(repoRoot)) {
+      return;
+    }
+    try {
+      const copyRecursive = (srcDir: string, destDir: string): void => {
+        const entries = fs.readdirSync(srcDir, { withFileTypes: true });
+        for (const entry of entries) {
+          if (entry.name === '.git' || entry.name === '.agent' || entry.name === 'node_modules') {
+            continue;
+          }
+          const srcFull = path.join(srcDir, entry.name);
+          const destFull = path.join(destDir, entry.name);
+          if (entry.isDirectory()) {
+            fs.mkdirSync(destFull, { recursive: true });
+            copyRecursive(srcFull, destFull);
+          } else if (entry.isFile()) {
+            fs.mkdirSync(path.dirname(destFull), { recursive: true });
+            fs.copyFileSync(srcFull, destFull);
+          }
+        }
+      };
+      copyRecursive(worktreePath, repoRoot);
+    } catch {}
+  }
+
   /**
    * Dispatches typed events from Step 3 to all views and status bar
    */
@@ -402,22 +438,35 @@ export class ExtensionController {
     void this.refreshRuns();
 
     switch (event.type) {
-      case 'model_message':
-        this.chatView.appendMessage('assistant', event.content);
+      case 'model_message': {
+        const trimmed = event.content.trim();
+        const isRawToolJson =
+          (trimmed.startsWith('```json') || trimmed.startsWith('{')) &&
+          trimmed.includes('"name"') &&
+          trimmed.includes('"arguments"');
+        if (!isRawToolJson) {
+          this.chatView.appendMessage('assistant', event.content);
+        }
         // Estimate token count update
         this.statusBar.updateContextUsage(
           Math.min(this.config.contextWindowLimit, Math.floor(Math.random() * 2000) + 1200),
           this.config.contextWindowLimit,
         );
         break;
+      }
 
-      case 'tool_call':
-        this.chatView.appendMessage('system', `🛠 Calling tool "${event.tool}"...`);
+      case 'tool_call': {
+        const pathArg =
+          event.arguments && typeof event.arguments['path'] === 'string'
+            ? ` (${event.arguments['path']})`
+            : '';
+        this.chatView.appendMessage('system', `🛠 Calling tool "${event.tool}"${pathArg}...`);
         break;
+      }
 
       case 'tool_result':
         if (event.tool === 'write_file' || event.tool === 'edit_file') {
-          // File appeared in worktree!
+          this.syncWorktreeToRepo();
           this.chatView.appendMessage(
             'system',
             `📄 File updated in workspace (Click "Review Diff" to inspect)`,
@@ -425,20 +474,72 @@ export class ExtensionController {
         }
         break;
 
-      case 'plan_created':
+      case 'plan_created': {
+        let planMarkdown = `Execution Plan for Run ${runId}`;
+        let specMarkdown = `Project Spec for Run ${runId}`;
+
+        const candidatePlanPath =
+          event.planPath ||
+          (this.activeRun?.worktreePath
+            ? path.join(this.activeRun.worktreePath, '.agent', 'runs', runId, 'plan.md')
+            : '');
+        const candidateSpecPath =
+          event.specPath ||
+          (this.activeRun?.worktreePath ? path.join(this.activeRun.worktreePath, 'SPEC.md') : '');
+
+        if (candidatePlanPath) {
+          try {
+            if (fs.existsSync(candidatePlanPath)) {
+              planMarkdown = fs.readFileSync(candidatePlanPath, 'utf-8');
+            }
+          } catch {}
+        }
+        if (candidateSpecPath) {
+          try {
+            if (fs.existsSync(candidateSpecPath)) {
+              specMarkdown = fs.readFileSync(candidateSpecPath, 'utf-8');
+            }
+          } catch {}
+        }
+
         this.planView.setPlanData({
           runId,
-          planMarkdown: `Execution Plan for Run ${runId}`,
-          specMarkdown: `Project Spec for Run ${runId}`,
+          planMarkdown,
+          specMarkdown,
           tasks: event.tasks,
           isWaitingApproval: true,
         });
         this.tasksView.setTasks(runId, event.tasks);
-        this.chatView.appendMessage(
-          'system',
-          '📋 Execution plan created. Please review in the Plan tab and click Approve.',
-        );
+
+        const taskListText = event.tasks
+          .map((t, idx) => `${idx + 1}. [${t.id}] ${t.title}`)
+          .join('\n');
+
+        const fullPlanChatMsg = [
+          '📋 Execution plan created. Please review the implementation plan below and click Approve:',
+          '',
+          '=== TASKS ===',
+          taskListText || '(No tasks listed)',
+          '',
+          '=== IMPLEMENTATION PLAN (plan.md) ===',
+          planMarkdown,
+        ].join('\n');
+
+        this.chatView.appendMessage('system', fullPlanChatMsg);
+
+        if (this.isRealIde() && this.activeRun) {
+          try {
+            const repoPlanPath = path.join(this.activeRun.repoRoot, 'PLAN.md');
+            fs.writeFileSync(repoPlanPath, planMarkdown, 'utf-8');
+            this.syncWorktreeToRepo();
+            void this.vscode.commands.executeCommand(
+              'vscode.open',
+              this.vscode.Uri.file(repoPlanPath),
+            );
+          } catch {}
+        }
         break;
+      }
 
       case 'task_status_changed':
         if (this.activeRun) {
@@ -450,13 +551,36 @@ export class ExtensionController {
         }
         break;
 
-      case 'run_finished':
+      case 'run_finished': {
+        this.syncWorktreeToRepo();
+        let walkthroughText = '';
+        if (this.activeRun?.worktreePath) {
+          try {
+            const wtWalkthrough = path.join(
+              this.activeRun.worktreePath,
+              '.agent',
+              'runs',
+              runId,
+              'walkthrough.md',
+            );
+            if (fs.existsSync(wtWalkthrough)) {
+              walkthroughText = fs.readFileSync(wtWalkthrough, 'utf-8');
+              if (this.isRealIde()) {
+                const repoWalkthrough = path.join(this.activeRun.repoRoot, 'WALKTHROUGH.md');
+                fs.writeFileSync(repoWalkthrough, walkthroughText, 'utf-8');
+              }
+            }
+          } catch {}
+        }
         this.chatView.appendMessage(
           'system',
-          `🏁 Run finished with status: ${event.status.toUpperCase()}`,
+          walkthroughText
+            ? `🏁 Run finished with status: ${event.status.toUpperCase()}\n\n${walkthroughText}`
+            : `🏁 Run finished with status: ${event.status.toUpperCase()}`,
         );
         this.refreshArtifacts(runId);
         break;
+      }
 
       case 'walkthrough_created':
         this.chatView.appendMessage('system', `📘 Walkthrough artifact generated.`);
