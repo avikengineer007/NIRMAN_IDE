@@ -1,7 +1,106 @@
 import base64
+import ctypes
+import hashlib
 import io
+import json
 import os
+import struct
 from PIL import Image, ImageDraw
+
+
+def update_pe_exe_icon(exe_path: str, ico_path: str) -> bool:
+    """
+    Replaces the embedded Win32 RT_ICON and RT_GROUP_ICON resources inside a Windows PE .exe
+    using native kernel32 BeginUpdateResourceW / UpdateResourceW / EndUpdateResourceW.
+    Returns True if updated (or False if the .exe is currently running/locked).
+    """
+    if os.name != "nt" or not os.path.exists(exe_path) or not os.path.exists(ico_path):
+        return False
+    try:
+        with open(ico_path, "rb") as f:
+            ico_data = f.read()
+        reserved, ico_type, count = struct.unpack_from("<HHH", ico_data, 0)
+        if reserved != 0 or ico_type != 1 or count == 0:
+            return False
+
+        kernel32 = ctypes.windll.kernel32
+        kernel32.BeginUpdateResourceW.argtypes = [ctypes.c_wchar_p, ctypes.c_int]
+        kernel32.BeginUpdateResourceW.restype = ctypes.c_void_p
+        kernel32.UpdateResourceW.argtypes = [
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_ushort,
+            ctypes.c_void_p,
+            ctypes.c_uint,
+        ]
+        kernel32.UpdateResourceW.restype = ctypes.c_int
+        kernel32.EndUpdateResourceW.argtypes = [ctypes.c_void_p, ctypes.c_int]
+        kernel32.EndUpdateResourceW.restype = ctypes.c_int
+
+        h_update = kernel32.BeginUpdateResourceW(exe_path, 0)
+        if not h_update:
+            return False
+
+        RT_ICON = 3
+        RT_GROUP_ICON = 14
+        LANG_NEUTRAL = 1033
+
+        grp_data = bytearray(struct.pack("<HHH", 0, 1, count))
+        offset = 6
+        for i in range(count):
+            w, h, colors, res, planes, bit_count, bytes_in_res, img_offset = struct.unpack_from(
+                "<BBBBHHII", ico_data, offset
+            )
+            offset += 16
+            icon_id = i + 1
+            img_bytes = ico_data[img_offset : img_offset + bytes_in_res]
+            buf = ctypes.create_string_buffer(img_bytes, len(img_bytes))
+            kernel32.UpdateResourceW(
+                h_update,
+                ctypes.c_void_p(RT_ICON),
+                ctypes.c_void_p(icon_id),
+                LANG_NEUTRAL,
+                buf,
+                len(img_bytes),
+            )
+            grp_data.extend(
+                struct.pack(
+                    "<BBBBHHIH",
+                    w,
+                    h,
+                    colors,
+                    res,
+                    planes if planes else 1,
+                    bit_count if bit_count else 32,
+                    bytes_in_res,
+                    icon_id,
+                )
+            )
+
+        grp_buf = ctypes.create_string_buffer(bytes(grp_data), len(grp_data))
+        # Update both numeric group ID 1 and "IDR_MAINFRAME"
+        kernel32.UpdateResourceW(
+            h_update,
+            ctypes.c_void_p(RT_GROUP_ICON),
+            ctypes.c_void_p(1),
+            LANG_NEUTRAL,
+            grp_buf,
+            len(grp_data),
+        )
+        id_str = ctypes.create_unicode_buffer("IDR_MAINFRAME")
+        kernel32.UpdateResourceW(
+            h_update,
+            ctypes.c_void_p(RT_GROUP_ICON),
+            ctypes.cast(id_str, ctypes.c_void_p),
+            LANG_NEUTRAL,
+            grp_buf,
+            len(grp_data),
+        )
+
+        return bool(kernel32.EndUpdateResourceW(h_update, 0))
+    except Exception:
+        return False
 
 
 def extract_transparent_n_glyph(source_img: Image.Image, target_size: int = 512) -> Image.Image:
@@ -225,6 +324,50 @@ def main():
                 with open(wb_css_path, "w", encoding="utf-8") as f:
                     f.write(wb_css)
                 print("Updated top-left window-appicon size to 22px in workbench.desktop.main.css")
+
+        # Patch mainImpl.js so Electron BrowserWindow always uses resources/win32/code.ico on Windows
+        main_impl_path = os.path.join(ide_app_dir, "out", "mainImpl.js")
+        if os.path.exists(main_impl_path):
+            with open(main_impl_path, "r", encoding="utf-8") as f:
+                main_impl = f.read()
+            old_icon_rule = 'F&&(a.isBuilt||(c.icon=N(a.appRoot,"resources/win32/code_150x150.png")))'
+            new_icon_rule = 'F&&(c.icon=N(a.appRoot,"resources/win32/code.ico"))'
+            old_qt_rule = 'Qt=e.isSessionsWindow&&F?N(this.environmentMainService.appRoot,"resources/win32/sessions.ico"):void 0'
+            new_qt_rule = 'Qt=F?N(this.environmentMainService.appRoot,"resources/win32/code.ico"):void 0'
+            changed_main = False
+            if old_icon_rule in main_impl:
+                main_impl = main_impl.replace(old_icon_rule, new_icon_rule)
+                changed_main = True
+            if old_qt_rule in main_impl:
+                main_impl = main_impl.replace(old_qt_rule, new_qt_rule)
+                changed_main = True
+            if changed_main:
+                with open(main_impl_path, "w", encoding="utf-8") as f:
+                    f.write(main_impl)
+                print("Patched mainImpl.js so BrowserWindow taskbar icon uses resources/win32/code.ico")
+
+        # Recompute SHA-256 base64 checksums in product.json to prevent 'installation appears to be corrupt' warning
+        prod_json_path = os.path.join(ide_app_dir, "product.json")
+        if os.path.exists(prod_json_path):
+            with open(prod_json_path, "r", encoding="utf-8") as f:
+                prod_data = json.load(f)
+            if "checksums" in prod_data and isinstance(prod_data["checksums"], dict):
+                for rel_file in list(prod_data["checksums"].keys()):
+                    full_file = os.path.join(ide_app_dir, "out", rel_file)
+                    if os.path.exists(full_file):
+                        with open(full_file, "rb") as rf:
+                            digest = hashlib.sha256(rf.read()).digest()
+                        prod_data["checksums"][rel_file] = base64.b64encode(digest).decode("ascii").rstrip("=")
+            prod_data["win32AppUserModelId"] = "NIRMAN.AgenticStudio.v2"
+            with open(prod_json_path, "w", encoding="utf-8") as f:
+                json.dump(prod_data, f, indent=2)
+            print("Updated SHA-256 checksums and win32AppUserModelId in product.json!")
+
+        # Attempt to update embedded PE icon inside nirman.exe and VSCodium.exe (if not locked)
+        for exe_name in ["nirman.exe", "VSCodium.exe"]:
+            exe_full = os.path.join(r"C:\Tools\nirman\ide", exe_name)
+            if update_pe_exe_icon(exe_full, ico_path):
+                print(f"Updated embedded Win32 PE icon resource inside {exe_full}")
 
 
 if __name__ == "__main__":

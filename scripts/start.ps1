@@ -496,6 +496,12 @@ try {
     $ideRunner = if (Test-Path $IdeRealExe) { $IdeRealExe } elseif (Test-Path $IdeCmd) { $IdeCmd } else { "node" }
     $runArgs = if (Test-Path $IdeRealExe) { $ideArgs } elseif (Test-Path $IdeCmd) { $ideArgs } else { @((Join-Path $InstallDir "main.js")) + $ideArgs }
 
+    # Ensure embedded PE icon in nirman.exe is updated while process is not locked
+    $genIconsScript = "C:\Dev\Nirman\scripts\generate-icons.py"
+    if ((Test-Path $IdeRealExe) -and (Test-Path $genIconsScript)) {
+        try { & python $genIconsScript 2>$null | Out-Null } catch {}
+    }
+
     Write-Log "INFO" "Opening IDE in workspace: $ProjectsDir"
     if ($runArgs.Count -gt 0) {
         $ideProcess = Start-Process -FilePath $ideRunner -ArgumentList $runArgs -PassThru
