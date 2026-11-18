@@ -10,13 +10,15 @@ export interface ChatViewDelegate {
   onReviseActivePlan?(feedback: string): Promise<void>;
   onOpenFile?(filePath: string): Promise<void>;
   onClearChat?(): Promise<void>;
+  onRunInTerminal?(command: string): Promise<void>;
 }
 
 type ExtraChatWebviewMessage =
   | { type: 'approve_active_plan' }
   | { type: 'revise_active_plan'; feedback: string }
   | { type: 'open_file'; filePath: string }
-  | { type: 'clear_chat' };
+  | { type: 'clear_chat' }
+  | { type: 'run_in_terminal'; command: string };
 
 export class ChatViewProvider {
   private view?: IWebviewView | undefined;
@@ -96,6 +98,11 @@ export class ChatViewProvider {
             case 'clear_chat':
               if (this.delegate!.onClearChat) {
                 await this.delegate!.onClearChat();
+              }
+              break;
+            case 'run_in_terminal':
+              if (this.delegate!.onRunInTerminal) {
+                await this.delegate!.onRunInTerminal(msg.command);
               }
               break;
           }
@@ -386,6 +393,59 @@ export class ChatViewProvider {
       padding: 0;
       color: #e4e4e7;
     }
+    .cmd-block {
+      background: #0d0d10;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      margin: 8px 0;
+      overflow: hidden;
+    }
+    .cmd-block-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 5px 10px;
+      background: #17171d;
+      border-bottom: 1px solid var(--border);
+      font-size: 10.5px;
+      color: var(--text-muted);
+    }
+    .cmd-block-actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .btn-run-term {
+      padding: 3px 9px;
+      background: var(--success);
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-run-term:hover {
+      background: var(--success-hover);
+    }
+    .btn-copy-cmd {
+      padding: 3px 8px;
+      background: var(--surface-elevated);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 10.5px;
+      cursor: pointer;
+    }
+    .btn-copy-cmd:hover {
+      background: var(--surface-hover);
+    }
+    .cmd-block pre {
+      margin: 0;
+      border: none;
+      border-radius: 0;
+      padding: 9px 11px;
+    }
     .plan-card {
       background: linear-gradient(180deg, rgba(37, 99, 235, 0.08), rgba(28, 28, 33, 0.95));
       border: 1px solid rgba(59, 130, 246, 0.4);
@@ -583,8 +643,33 @@ export class ChatViewProvider {
 
     function renderMarkdown(md) {
       let html = escapeHtml(md);
-      // Fenced code blocks
-      html = html.replace(/\`\`\`([a-zA-Z0-9_-]*)\\n([\\s\\S]*?)\`\`\`/g, '<pre><code>$2</code></pre>');
+      // Fenced code blocks with interactive "Run in Terminal" & "Copy" buttons
+      html = html.replace(/\`\`\`([a-zA-Z0-9_-]*)\\n([\\s\\S]*?)\`\`\`/g, (_m, lang, body) => {
+        const trimmedCmd = String(body || '').trim();
+        const encodedCmd = encodeURIComponent(trimmedCmd);
+        const normLang = String(lang || '').toLowerCase();
+        const isShellBlock =
+          normLang === 'bash' ||
+          normLang === 'sh' ||
+          normLang === 'shell' ||
+          normLang === 'powershell' ||
+          normLang === 'ps1' ||
+          normLang === 'cmd' ||
+          (!normLang && /^(python|py|node|npm|pnpm|yarn|pytest|pip|cargo|go|dotnet|java|javac|gcc|g\\+\\+|start|docker)\\b/i.test(trimmedCmd));
+        if (isShellBlock && trimmedCmd && !trimmedCmd.toLowerCase().startsWith('see spec')) {
+          return (
+            '<div class="cmd-block">' +
+            '<div class="cmd-block-header"><span>Terminal Command</span>' +
+            '<div class="cmd-block-actions">' +
+            '<button type="button" class="btn-run-term" data-run-cmd="' + encodedCmd + '">▶ Run in Terminal</button>' +
+            '<button type="button" class="btn-copy-cmd" data-copy-cmd="' + encodedCmd + '">📋 Copy</button>' +
+            '</div></div>' +
+            '<pre><code>' + trimmedCmd + '</code></pre>' +
+            '</div>'
+          );
+        }
+        return '<pre><code>' + body + '</code></pre>';
+      });
       // Headings
       html = html.replace(/^####\\s+(.+)$/gm, '<h4>$1</h4>');
       html = html.replace(/^###\\s+(.+)$/gm, '<h3>$1</h3>');
@@ -756,6 +841,34 @@ export class ChatViewProvider {
 
     newChatBtn.addEventListener('click', () => {
       vscode.postMessage({ type: 'clear_chat' });
+    });
+
+    chatLog.addEventListener('click', (e) => {
+      const target = e.target;
+      if (!target || !target.getAttribute) return;
+      const runCmdAttr = target.getAttribute('data-run-cmd');
+      if (runCmdAttr) {
+        const cmd = decodeURIComponent(runCmdAttr);
+        vscode.postMessage({ type: 'run_in_terminal', command: cmd });
+        const origText = target.textContent;
+        target.textContent = '▶ Sent to Terminal';
+        setTimeout(() => {
+          target.textContent = origText;
+        }, 1800);
+        return;
+      }
+      const copyCmdAttr = target.getAttribute('data-copy-cmd');
+      if (copyCmdAttr) {
+        const cmd = decodeURIComponent(copyCmdAttr);
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(cmd);
+        }
+        const origText = target.textContent;
+        target.textContent = '✓ Copied';
+        setTimeout(() => {
+          target.textContent = origText;
+        }, 1500);
+      }
     });
 
     document.querySelectorAll('.chip').forEach((btn) => {

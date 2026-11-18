@@ -45,6 +45,7 @@ export interface AgentLoopOptions {
   artifacts?: ArtifactStore;
   planner?: Planner;
   skipPlanning?: boolean;
+  skipClarifications?: boolean;
   onClarification?: ClarificationHandler;
   onApproval?: ApprovalHandler;
   onToolApproval?: ToolApprovalHandler;

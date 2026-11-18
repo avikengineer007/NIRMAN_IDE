@@ -167,17 +167,40 @@ export class ExtensionController {
 
     let filesSummary = '';
     try {
-      const topFiles = fs
-        .readdirSync(workspaceRoot)
-        .filter((n) => n !== '.git' && n !== '.agent' && n !== 'node_modules')
-        .slice(0, 25);
-      filesSummary = topFiles.join(', ');
+      const collected: string[] = [];
+      const walk = (dir: string): void => {
+        if (collected.length >= 40) return;
+        const entries = fs.readdirSync(dir, { withFileTypes: true });
+        for (const entry of entries) {
+          if (
+            entry.name === '.git' ||
+            entry.name === '.agent' ||
+            entry.name === 'node_modules' ||
+            entry.name === '__pycache__' ||
+            entry.name.endsWith('.pyc')
+          ) {
+            continue;
+          }
+          const full = path.join(dir, entry.name);
+          const rel = path.relative(workspaceRoot, full).replace(/\\/g, '/');
+          if (entry.isDirectory()) {
+            walk(full);
+          } else if (entry.isFile()) {
+            collected.push(rel);
+          }
+        }
+      };
+      walk(workspaceRoot);
+      filesSummary = collected.join(', ');
     } catch {}
 
     let specSnippet = '';
     try {
+      const walkthroughPath = path.join(workspaceRoot, 'WALKTHROUGH.md');
       const specPath = path.join(workspaceRoot, 'SPEC.md');
-      if (fs.existsSync(specPath)) {
+      if (fs.existsSync(walkthroughPath)) {
+        specSnippet = fs.readFileSync(walkthroughPath, 'utf-8').slice(0, 1800);
+      } else if (fs.existsSync(specPath)) {
         specSnippet = fs.readFileSync(specPath, 'utf-8').slice(0, 1500);
       }
     } catch {}
@@ -334,6 +357,9 @@ export class ExtensionController {
       },
       onClearChat: async () => {
         this.clearWorkspaceChatHistory();
+      },
+      onRunInTerminal: async (command) => {
+        await this.runCommandInTerminal(command);
       },
     });
 
@@ -580,6 +606,33 @@ export class ExtensionController {
       `Risky action "${toolName}" was ${approved ? 'APPROVED' : 'DENIED'} by user.`,
     );
     return approved;
+  }
+
+  /**
+   * Opens or reuses an integrated VS Code terminal in the workspace root and executes the given command.
+   */
+  public async runCommandInTerminal(command: string): Promise<void> {
+    this.syncWorktreeToRepo();
+    const workspaceRoot = this.activeRun?.repoRoot || this.getActiveWorkspaceRoot();
+    const win = this.vscode.window as unknown as {
+      terminals?: Array<{ name: string; show(preserveFocus?: boolean): void; sendText(text: string, shouldExecute?: boolean): void }>;
+      createTerminal?(options: { name: string; cwd?: string }): {
+        name: string;
+        show(preserveFocus?: boolean): void;
+        sendText(text: string, shouldExecute?: boolean): void;
+      };
+    };
+
+    if (typeof win.createTerminal === 'function') {
+      let term = win.terminals?.find((t) => t.name === 'NIRMAN');
+      if (!term) {
+        term = win.createTerminal({ name: 'NIRMAN', cwd: workspaceRoot });
+      }
+      term.show(false);
+      term.sendText(command, true);
+    } else {
+      await this.vscode.commands.executeCommand('workbench.action.terminal.toggleTerminal');
+    }
   }
 
   /**

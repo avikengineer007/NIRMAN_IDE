@@ -1,4 +1,5 @@
 import type { Sandbox } from '@nirman/sandbox';
+import { extractSpecCommand } from './walkthrough.js';
 
 export interface VerificationResult {
   success: boolean;
@@ -25,12 +26,27 @@ export function extractVerificationCommands(
     commands.push(taskCommandMatch[1].trim());
   }
 
-  // Look for build / test commands in SPEC.md
-  // Patterns: "Test: <cmd>", "- Test: <cmd>", "Commands:\n- Test: <cmd>"
-  const testRegex = /(?:^|\n)\s*[-*]?\s*(?:Test|Build|Verify)\s*[:=-]\s*`?([^\n`]+)`?/gi;
+  // Extract Build / Test / Verify commands from SPEC.md (handles **bold:**, inline, and code blocks)
+  const specBuildCmd = extractSpecCommand(specMarkdown, 'Build');
+  if (specBuildCmd && !commands.includes(specBuildCmd)) {
+    commands.push(specBuildCmd);
+  }
+  const specTestCmd = extractSpecCommand(specMarkdown, 'Test|Verify');
+  if (specTestCmd && !commands.includes(specTestCmd)) {
+    commands.push(specTestCmd);
+  }
+
+  // Look for build / test commands in SPEC.md (fallback line scan)
+  const testRegex =
+    /(?:^|\n)\s*[-*]?\s*\*{0,2}(?:Test|Build|Verify)\s*[:=-]?\*{0,2}\s*[:=-]?\s*`?([^\n`*]+)`?/gi;
   for (const match of specMarkdown.matchAll(testRegex)) {
     const cmd = match[1]?.trim();
-    if (cmd && !cmd.toLowerCase().startsWith('none') && !commands.includes(cmd)) {
+    if (
+      cmd &&
+      !cmd.toLowerCase().startsWith('none') &&
+      !cmd.toLowerCase().startsWith('n/a') &&
+      !commands.includes(cmd)
+    ) {
       commands.push(cmd);
     }
   }
@@ -140,7 +156,18 @@ export async function runVerification(
   }
 
   for (const cmd of commands) {
-    const result = await sandbox.executeCommand(cmd, { timeoutMs });
+    let result = await sandbox.executeCommand(cmd, { timeoutMs });
+    if (
+      result.exitCode !== 0 &&
+      !result.timedOut &&
+      /^python3?\s+-m\s+unittest\s+discover\s+-s\s+/i.test(cmd) &&
+      !cmd.includes('-t ')
+    ) {
+      const retryWithTopDir = await sandbox.executeCommand(`${cmd} -t .`, { timeoutMs });
+      if (retryWithTopDir.exitCode === 0) {
+        result = retryWithTopDir;
+      }
+    }
     if (result.exitCode !== 0 || result.timedOut) {
       const errorMsg = result.timedOut
         ? `Command timed out after ${timeoutMs}ms`

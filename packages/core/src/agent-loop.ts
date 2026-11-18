@@ -33,7 +33,11 @@ import { BrowserVerifier, DevServerManager } from '@nirman/browser';
 import { Planner, parsePlanTasks, type PlanGenerationResult } from './planner.js';
 import { extractVerificationCommands, parseRelevantError, runVerification } from './verifier.js';
 import { captureRunDiff, captureTaskDiff, initGitRepo } from './git.js';
-import { generateWalkthrough } from './walkthrough.js';
+import {
+  ensureRunnablePythonScripts,
+  generateWalkthrough,
+  verifyWalkthroughCommands,
+} from './walkthrough.js';
 import { ContextManager } from './context/context-manager.js';
 import type { RetrievedSnippet } from './index/types.js';
 import type { AgentLoopOptions, AgentLoopResult } from './types.js';
@@ -107,17 +111,19 @@ export async function* runAgentLoop(
   if (!options.skipPlanning) {
     const planner = options.planner ?? new Planner();
 
-    // 2a. Ask clarifying questions (at most 3, only if essential)
+    // 2a. Ask clarifying questions (at most 3, only if essential and not skipped)
     let answers: Record<string, string> = {};
-    const questions = await planner.generateClarifications(options.task, options.modelClient);
-    if (questions.length > 0) {
-      const clarifyEvent = createClarificationRequestedEvent(store.runId, questions);
-      await store.appendEvent(clarifyEvent);
-      options.onEvent?.(clarifyEvent);
-      yield clarifyEvent;
+    if (!options.skipClarifications) {
+      const questions = await planner.generateClarifications(options.task, options.modelClient);
+      if (questions.length > 0) {
+        const clarifyEvent = createClarificationRequestedEvent(store.runId, questions);
+        await store.appendEvent(clarifyEvent);
+        options.onEvent?.(clarifyEvent);
+        yield clarifyEvent;
 
-      if (options.onClarification) {
-        answers = await options.onClarification(questions);
+        if (options.onClarification) {
+          answers = await options.onClarification(questions);
+        }
       }
     }
 
@@ -355,6 +361,8 @@ export async function* runAgentLoop(
       while (!taskFinished) {
         let attemptTurnCount = 0;
         let lastToolCallsSignature = '';
+        const seenWriteOrListSignatures = new Set<string>();
+        const writtenFilesInStep = new Set<string>();
 
         // Model Turn Loop (runs tools until model stops calling tools)
         while (true) {
@@ -399,11 +407,22 @@ export async function* runAgentLoop(
               .map((tc) => `${tc.name}:${tc.rawArguments ?? JSON.stringify(tc.arguments)}`)
               .join('|');
 
-            if (currentSignature === lastToolCallsSignature) {
+            if (
+              currentSignature === lastToolCallsSignature ||
+              seenWriteOrListSignatures.has(currentSignature)
+            ) {
               // Duplicate identical tool calls; break turn loop to trigger verification
               break;
             }
             lastToolCallsSignature = currentSignature;
+            if (
+              response.parsedToolCalls.every(
+                (tc) =>
+                  tc.name === 'write_file' || tc.name === 'edit_file' || tc.name === 'list_dir',
+              )
+            ) {
+              seenWriteOrListSignatures.add(currentSignature);
+            }
 
             attemptTurnCount++;
             if (attemptTurnCount > 6) {
@@ -585,8 +604,13 @@ export async function* runAgentLoop(
               options.onEvent?.(callEvent);
               yield callEvent;
 
-              // 6. Execute Tool in Sandbox
-              const toolResult = await tools.execute(toolCall.name, effectiveArgs, {
+              // 6. Execute Tool in Sandbox (upgrade top-level list_dir "." to recursive so model sees src/ files)
+              const execArgs =
+                toolCall.name === 'list_dir' &&
+                (effectiveArgs['path'] === '.' || !effectiveArgs['path'])
+                  ? { ...effectiveArgs, recursive: true }
+                  : effectiveArgs;
+              const toolResult = await tools.execute(toolCall.name, execArgs, {
                 sandbox,
               });
 
@@ -623,6 +647,16 @@ export async function* runAgentLoop(
               await store.appendEvent(resultEvent);
               options.onEvent?.(resultEvent);
               yield resultEvent;
+
+              // If write_file or edit_file succeeded, track written files and remind model not to rewrite the same file
+              if (
+                (toolCall.name === 'write_file' || toolCall.name === 'edit_file') &&
+                toolResult.success &&
+                typeof effectiveArgs['path'] === 'string'
+              ) {
+                writtenFilesInStep.add(effectiveArgs['path']);
+                output += `\n[Workspace files written in this step: ${Array.from(writtenFilesInStep).join(', ')}. Do NOT call write_file on the same file again. Once all required files for this step are created, reply with a brief summary message and call NO more tools.]`;
+              }
 
               // If run_shell executed a test command and succeeded, guide the local model to conclude the step instead of looping
               if (
@@ -780,7 +814,25 @@ export async function* runAgentLoop(
     yield errEvent;
   }
 
-  // 4. Capture Cumulative Run Diff
+  // 4. Collect recursive workspace files and ensure standalone Python scripts have runnable __main__ entry points
+  const finalEntries = await sandbox.listDir('.', { recursive: true });
+  const allWorkspaceFiles = finalEntries
+    .filter((e) => e.type === 'file')
+    .map((e) => e.path.replace(/\\/g, '/'))
+    .filter(
+      (f) =>
+        !f.startsWith('.git') &&
+        !f.startsWith('.agent') &&
+        !f.startsWith('node_modules') &&
+        !f.includes('__pycache__') &&
+        !f.endsWith('.pyc'),
+    );
+
+  if (finalStatus === 'completed') {
+    await ensureRunnablePythonScripts(sandbox, allWorkspaceFiles);
+  }
+
+  // 4a. Capture Cumulative Run Diff
   const runDiff = await captureRunDiff(sandbox);
   const runDiffPath = await store.writeRunDiff(runDiff);
 
@@ -821,13 +873,8 @@ export async function* runAgentLoop(
     }
   }
 
-  // 5. Generate and Save Final Walkthrough
-  const finalEntries = await sandbox.listDir('.');
-  const allWorkspaceFiles = finalEntries
-    .map((e) => e.path)
-    .filter(
-      (f) => !f.startsWith('.git') && !f.startsWith('.agent') && !f.startsWith('node_modules'),
-    );
+  // 5. Verify Walkthrough Commands & Save Final Walkthrough
+  const verifiedCmds = await verifyWalkthroughCommands(sandbox, specMarkdown, allWorkspaceFiles);
 
   const walkthroughContent = generateWalkthrough({
     task: options.task,
@@ -838,6 +885,8 @@ export async function* runAgentLoop(
     planMarkdown,
     createdFiles: allWorkspaceFiles,
     durationMs: Date.now() - startTime,
+    verifiedRunCommand: verifiedCmds.verifiedRunCommand,
+    verifiedTestCommand: verifiedCmds.verifiedTestCommand,
   });
 
   const walkthroughPath = await store.writeWalkthrough(walkthroughContent);

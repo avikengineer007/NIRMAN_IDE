@@ -177,6 +177,7 @@ export class RunController {
       tools: this.tools,
       artifacts: this.artifacts,
       skipPlanning: this.skipPlanning,
+      skipClarifications: true,
       onApproval: onApprovalHandler,
       onToolApproval: async (toolName: string, _args: Record<string, unknown>, reason: string) => {
         this.pendingToolName = toolName;
