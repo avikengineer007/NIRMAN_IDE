@@ -42,16 +42,13 @@ If no tool call is needed, reply normally with plain text.`;
 function extractJsonCandidate(text: string): string | null {
   const trimmed = text.trim();
 
-  // Try markdown fenced blocks first
-  const fencedMatch = /```(?:json)?\s*([\s\S]*?)\s*```/i.exec(trimmed);
+  // Try markdown fenced blocks first (greedy match handles nested ``` inside JSON string values)
+  const fencedMatch = /```(?:json)?\s*([\s\S]*)\s*```/i.exec(trimmed);
   if (fencedMatch && fencedMatch[1]) {
-    const candidate = fencedMatch[1].trim();
-    if (candidate.endsWith('}')) {
-      return candidate;
-    }
+    return fencedMatch[1].trim();
   }
 
-  // Look for outer braces containing "tool" or "name" (handles nested ``` inside JSON string values)
+  // Look for outer braces containing "tool" or "name"
   const firstBrace = trimmed.indexOf('{');
   const lastBrace = trimmed.lastIndexOf('}');
   if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
