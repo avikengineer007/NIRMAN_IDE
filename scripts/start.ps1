@@ -459,18 +459,39 @@ try {
 
     $ideArgs = @()
     if ($SampleTask) {
-        $ideArgs += $ProjectsDir
-        $ideArgs += "--run-sample-task"
+        $ideArgs += @("--user-data-dir", (Join-Path $InstallDir "temp\test-user-data"), $ProjectsDir, "--run-sample-task")
         Write-Log "INFO" "Executing sample task: Build a greeting CLI in workspace..."
         $sampleFile = Join-Path $ProjectsDir "hello-nirman.js"
         'console.log("Hello from NIRMAN Agentic Studio!");' | Set-Content -Path $sampleFile -Force
         Write-Log "PASS" "Sample task completed successfully! Created $sampleFile"
+    } elseif ($ExitAfterSeconds -gt 0) {
+        $ideArgs += @("--user-data-dir", (Join-Path $InstallDir "temp\test-user-data"))
     } elseif ($PSBoundParameters.ContainsKey('ProjectsDir')) {
         $ideArgs += $ProjectsDir
     }
 
     # Ensure ELECTRON_RUN_AS_NODE is unset so Electron launches as GUI window
     Remove-Item env:ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue
+
+    # Prevent default C:\Projects test workspace from auto-restoring on normal user launches
+    if (-not $SampleTask -and -not $PSBoundParameters.ContainsKey('ProjectsDir')) {
+        $storageJsonPath = Join-Path $InstallDir "ide\data\user-data\User\globalStorage\storage.json"
+        if (Test-Path $storageJsonPath) {
+            try {
+                $rawStorage = Get-Content $storageJsonPath -Raw
+                if ($rawStorage -match 'file:///c%3A/Projects') {
+                    $storageObj = $rawStorage | ConvertFrom-Json
+                    if ($storageObj.backupWorkspaces -and $storageObj.backupWorkspaces.folders) {
+                        $storageObj.backupWorkspaces.folders = @($storageObj.backupWorkspaces.folders | Where-Object { $_.folderUri -ne 'file:///c%3A/Projects' })
+                    }
+                    if ($storageObj.windowsState -and $storageObj.windowsState.lastActiveWindow -and $storageObj.windowsState.lastActiveWindow.folder -eq 'file:///c%3A/Projects') {
+                        $storageObj.windowsState.PSObject.Properties.Remove('lastActiveWindow')
+                    }
+                    $storageObj | ConvertTo-Json -Depth 10 | Set-Content -Path $storageJsonPath -Encoding UTF8 -Force
+                }
+            } catch {}
+        }
+    }
 
     $ideRunner = if (Test-Path $IdeRealExe) { $IdeRealExe } elseif (Test-Path $IdeCmd) { $IdeCmd } else { "node" }
     $runArgs = if (Test-Path $IdeRealExe) { $ideArgs } elseif (Test-Path $IdeCmd) { $ideArgs } else { @((Join-Path $InstallDir "main.js")) + $ideArgs }
