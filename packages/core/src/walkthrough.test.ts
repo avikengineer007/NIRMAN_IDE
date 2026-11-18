@@ -6,8 +6,10 @@ import { LocalSandbox } from '@nirman/sandbox';
 import {
   ensureRunnablePythonScripts,
   generateWalkthrough,
+  resolveWalkthroughCommands,
   verifyWalkthroughCommands,
 } from './walkthrough.js';
+import { getLanguageGuidanceForTask, LANGUAGE_RECIPES } from './templates.js';
 
 describe('generateWalkthrough', () => {
   it('generates markdown walkthrough report with tasks and commands', () => {
@@ -109,5 +111,23 @@ describe('generateWalkthrough', () => {
     } finally {
       await fs.rm(tempDir, { recursive: true, force: true });
     }
+  });
+
+  it('resolves runnable terminal commands and provides interactive input guidance across all coding languages', () => {
+    expect(LANGUAGE_RECIPES.length).toBeGreaterThanOrEqual(11);
+    expect(getLanguageGuidanceForTask('make a calculator using python')).toContain(
+      'if __name__ == "__main__":',
+    );
+    expect(getLanguageGuidanceForTask('build a calculator in C++')).toContain('std::cin');
+    expect(getLanguageGuidanceForTask('write a Java calculator')).toContain('Scanner');
+
+    expect(resolveWalkthroughCommands(undefined, ['src/main.c']).runCommand).toContain('gcc src/main.c');
+    expect(resolveWalkthroughCommands(undefined, ['src/main.cpp']).runCommand).toContain('g++');
+    expect(resolveWalkthroughCommands(undefined, ['Main.java']).runCommand).toBe('javac Main.java && java Main');
+    expect(resolveWalkthroughCommands(undefined, ['src/main.go']).runCommand).toBe('go run src/main.go');
+    expect(resolveWalkthroughCommands(undefined, ['src/main.rs']).runCommand).toContain('rustc src/main.rs');
+    expect(resolveWalkthroughCommands(undefined, ['main.rb']).runCommand).toBe('ruby main.rb');
+    expect(resolveWalkthroughCommands(undefined, ['main.php']).runCommand).toBe('php main.php');
+    expect(resolveWalkthroughCommands(undefined, ['src/calculator.ts']).runCommand).toBe('npx tsx src/calculator.ts');
   });
 });

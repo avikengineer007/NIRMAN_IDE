@@ -604,8 +604,9 @@ export class ChatViewProvider {
       <h3>How can I help you build today?</h3>
       <p>Ask questions or describe a feature. NIRMAN explains its implementation plan first, writes code, and saves chat history for this folder.</p>
       <div class="chips">
+        <button type="button" class="chip" data-prompt="Make a simple calculator using Python which takes user inputs for operations and numbers">🧮 Python Interactive Calculator (with user input)</button>
+        <button type="button" class="chip" data-prompt="Create a CLI calculator in C++ (or C / Java / Go / Rust / Node.js) that takes user inputs">⚡ Multi-Language CLI Program (C / C++ / Java / Go / Rust / JS)</button>
         <button type="button" class="chip" data-prompt="Build a modern personal portfolio website with dark mode and a contact form">✨ Build a personal portfolio website</button>
-        <button type="button" class="chip" data-prompt="Create a scientific calculator in Python with unit tests">🧮 Create a Python scientific calculator</button>
         <button type="button" class="chip" data-prompt="Explain the current project structure and how to run it">💡 Explain this workspace & how to run it</button>
       </div>
     </div>

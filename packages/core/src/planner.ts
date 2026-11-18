@@ -1,5 +1,6 @@
 import type { ModelClient } from '@nirman/model';
 import type { TaskItem } from '@nirman/artifacts';
+import { getLanguageGuidanceForTask } from './templates.js';
 
 export interface PlanGenerationResult {
   planMarkdown: string;
@@ -267,11 +268,9 @@ ${clarificationsText}
 Important Requirements:
 1. The workspace directory is the root of the project. Do NOT create an extra enclosing folder for the project; all files must be placed directly in the workspace root or standard subdirectories (e.g., src/).
 2. Keep the plan concise and high-level: 1 to 2 logical steps (e.g., Step 1: Implement interactive application code with a runnable entry point; Step 2: Verification and test cases). Do NOT create 10+ microscopic steps for individual terminal commands.
-3. For Python or CLI programs, Step 1 MUST specify that the main script includes an interactive or executable \`if __name__ == "__main__":\` CLI block so running \`python <script>.py\` in the terminal works directly for the user.
-4. Under SPEC.md "Build / Test / Run Commands", always list plain commands like:
-   - Build: None
-   - Run: python src/main.py
-   - Test: python -m unittest discover -s src/tests
+3. For any programming language (Python, JavaScript/Node.js, TypeScript, C, C++, Java, Go, Rust, C#, Ruby, PHP), Step 1 MUST specify a runnable main entry point (`if __name__ == "__main__":`, `main()`, `int main()`, `public static void main`, etc.) that takes user input when appropriate so running it in the terminal works directly.
+4. Under SPEC.md "Build / Test / Run Commands", always list exact plain terminal commands (never "None" for Run) matching the language:
+${getLanguageGuidanceForTask(task)}
 5. STRICT RULE — DO NOT SHOW CODE IN PLAN.MD: Never include source code, function bodies, or code blocks inside plan.md. Instead, explain clearly HOW the agent will work on the project: the architectural approach, how each module/file will be structured and why, how components interact, and how the agent will verify and test the project.
 
 Create two comprehensive artifacts:

@@ -38,6 +38,7 @@ import {
   generateWalkthrough,
   verifyWalkthroughCommands,
 } from './walkthrough.js';
+import { getLanguageGuidanceForTask } from './templates.js';
 import { ContextManager } from './context/context-manager.js';
 import type { RetrievedSnippet } from './index/types.js';
 import type { AgentLoopOptions, AgentLoopResult } from './types.js';
@@ -327,11 +328,14 @@ export async function* runAgentLoop(
       }
 
       // Context Manager assembly with budget enforcement and snippet retrieval
+      const languageGuidance = getLanguageGuidanceForTask(options.task);
+      const effectiveSystemPrompt =
+        options.systemPrompt ?? `${DEFAULT_SYSTEM_PROMPT}\n${languageGuidance}`;
       const contextManager =
         options.contextManager ??
         new ContextManager({
           tokenBudget: maxTokens,
-          systemPrompt: options.systemPrompt ?? DEFAULT_SYSTEM_PROMPT,
+          systemPrompt: effectiveSystemPrompt,
           specMarkdown,
         });
 

@@ -5,6 +5,7 @@ export * from './planner.js';
 export * from './verifier.js';
 export * from './git.js';
 export * from './walkthrough.js';
+export * from './templates.js';
 export * from './agent-loop.js';
 export * from './index/types.js';
 export * from './index/embeddings.js';

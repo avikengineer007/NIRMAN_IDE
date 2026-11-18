@@ -153,18 +153,32 @@ export function resolveWalkthroughCommands(
     (f) => f.endsWith('.py') && isPythonTestOrMetaFile(f) && !f.endsWith('__init__.py'),
   );
 
-  // Identify JS application file(s)
+  // Identify JS / TS application file(s)
   const jsAppFiles = projectFiles.filter(
     (f) =>
-      f.endsWith('.js') &&
+      (f.endsWith('.js') || f.endsWith('.mjs')) &&
       !f.toLowerCase().includes('test') &&
       !f.toLowerCase().includes('config') &&
       !f.toLowerCase().includes('setup'),
   );
-  const preferredJsNames = ['index.js', 'server.js', 'app.js', 'main.js'];
+  const preferredJsNames = ['index.js', 'server.js', 'app.js', 'main.js', 'calculator.js'];
   const jsMain =
     jsAppFiles.find((f) => preferredJsNames.includes(f.split('/').pop()?.toLowerCase() ?? '')) ??
     jsAppFiles[0];
+
+  const tsMain = projectFiles.find(
+    (f) => f.endsWith('.ts') && !f.endsWith('.d.ts') && !f.toLowerCase().includes('test'),
+  );
+  const cMain = projectFiles.find((f) => f.endsWith('.c') && !f.toLowerCase().includes('test'));
+  const cppMain = projectFiles.find(
+    (f) => (f.endsWith('.cpp') || f.endsWith('.cc') || f.endsWith('.cxx')) && !f.toLowerCase().includes('test'),
+  );
+  const javaMain = projectFiles.find((f) => f.endsWith('.java') && !f.toLowerCase().includes('test'));
+  const goMain = projectFiles.find((f) => f.endsWith('.go') && !f.endsWith('_test.go'));
+  const rustMain = projectFiles.find((f) => f.endsWith('.rs') && !f.toLowerCase().includes('test'));
+  const csProj = projectFiles.find((f) => f.endsWith('.csproj'));
+  const rbMain = projectFiles.find((f) => f.endsWith('.rb') && !f.toLowerCase().includes('test'));
+  const phpMain = projectFiles.find((f) => f.endsWith('.php') && !f.toLowerCase().includes('test'));
 
   const htmlMain =
     projectFiles.find((f) => f.toLowerCase().endsWith('index.html')) ??
@@ -173,7 +187,9 @@ export function resolveWalkthroughCommands(
   // Validate if rawRunCmd references a script file that actually exists in projectFiles
   let validSpecRunCmd = rawRunCmd;
   if (validSpecRunCmd && projectFiles.length > 0) {
-    const scriptMatch = validSpecRunCmd.match(/^(?:python3?|py|node)\s+(?!-m\b)([^\s]+)/i);
+    const scriptMatch = validSpecRunCmd.match(
+      /^(?:python3?|py|node|ruby|php|go\s+run)\s+(?!-m\b)([^\s]+)/i,
+    );
     if (scriptMatch?.[1]) {
       const targetScript = scriptMatch[1].replace(/\\/g, '/').replace(/^\.\//, '');
       if (!projectFiles.includes(targetScript)) {
@@ -183,15 +199,44 @@ export function resolveWalkthroughCommands(
     }
   }
 
+  const exePrefix = process.platform === 'win32' ? '.\\app.exe' : './app';
+  const exeOut = process.platform === 'win32' ? 'app.exe' : 'app';
+
   let inferredRunCmd: string | undefined;
   if (pyMain) {
     inferredRunCmd = `python ${pyMain}`;
+  } else if (tsMain) {
+    inferredRunCmd = `npx tsx ${tsMain}`;
   } else if (projectFiles.includes('package.json') && !jsMain) {
     inferredRunCmd = 'npm start';
   } else if (jsMain) {
     inferredRunCmd = `node ${jsMain}`;
+  } else if (cppMain) {
+    inferredRunCmd = `g++ -std=c++17 ${cppMain} -o ${exeOut} && ${exePrefix}`;
+  } else if (cMain) {
+    inferredRunCmd = `gcc ${cMain} -o ${exeOut} && ${exePrefix}`;
+  } else if (javaMain) {
+    const lastSlash = javaMain.lastIndexOf('/');
+    const classDir = lastSlash !== -1 ? javaMain.slice(0, lastSlash) : '.';
+    const className = (lastSlash !== -1 ? javaMain.slice(lastSlash + 1) : javaMain).replace(/\.java$/i, '');
+    inferredRunCmd =
+      classDir === '.'
+        ? `javac ${javaMain} && java ${className}`
+        : `javac ${javaMain} && java -cp ${classDir} ${className}`;
+  } else if (goMain) {
+    inferredRunCmd = `go run ${goMain}`;
+  } else if (projectFiles.includes('Cargo.toml')) {
+    inferredRunCmd = 'cargo run';
+  } else if (rustMain) {
+    inferredRunCmd = `rustc ${rustMain} -o ${exeOut} && ${exePrefix}`;
+  } else if (csProj) {
+    inferredRunCmd = 'dotnet run';
+  } else if (rbMain) {
+    inferredRunCmd = `ruby ${rbMain}`;
+  } else if (phpMain) {
+    inferredRunCmd = `php ${phpMain}`;
   } else if (htmlMain) {
-    inferredRunCmd = `start ${htmlMain}`;
+    inferredRunCmd = process.platform === 'win32' ? `start ${htmlMain}` : `open ${htmlMain}`;
   }
 
   const runCommand = validSpecRunCmd ?? inferredRunCmd ?? 'See SPEC.md for start command';
@@ -213,8 +258,28 @@ export function resolveWalkthroughCommands(
     inferredTestCmd = 'npm test';
   } else if (pyMain) {
     inferredTestCmd = `python -m py_compile ${pyMain}`;
+  } else if (tsMain) {
+    inferredTestCmd = 'npx tsc --noEmit';
   } else if (jsMain) {
     inferredTestCmd = `node --check ${jsMain}`;
+  } else if (cppMain) {
+    inferredTestCmd = `g++ -std=c++17 -fsyntax-only ${cppMain}`;
+  } else if (cMain) {
+    inferredTestCmd = `gcc -fsyntax-only ${cMain}`;
+  } else if (javaMain) {
+    inferredTestCmd = `javac ${javaMain}`;
+  } else if (goMain) {
+    inferredTestCmd = 'go test ./...';
+  } else if (projectFiles.includes('Cargo.toml')) {
+    inferredTestCmd = 'cargo test';
+  } else if (rustMain) {
+    inferredTestCmd = `rustc --emit=metadata ${rustMain}`;
+  } else if (csProj) {
+    inferredTestCmd = 'dotnet build';
+  } else if (rbMain) {
+    inferredTestCmd = `ruby -c ${rbMain}`;
+  } else if (phpMain) {
+    inferredTestCmd = `php -l ${phpMain}`;
   }
 
   let validSpecTestCmd = rawTestCmd;
