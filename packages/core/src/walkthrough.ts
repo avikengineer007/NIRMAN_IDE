@@ -23,11 +23,34 @@ export function generateWalkthrough(options: WalkthroughOptions): string {
       ? '🛑 BLOCKED'
       : `⚠️ ${status.toUpperCase()}`;
 
-  // Extract How-to-run commands from SPEC.md
-  const runCommandsMatch = specMarkdown?.match(/(?:^|\n)\s*[-*]?\s*Run\s*[:=-]\s*`?([^\n`]+)`?/i);
-  const testCommandsMatch = specMarkdown?.match(/(?:^|\n)\s*[-*]?\s*Test\s*[:=-]\s*`?([^\n`]+)`?/i);
+  // Extract How-to-run commands from SPEC.md (handles optional **bold** markdown around Run/Test)
+  const runCommandsMatch = specMarkdown?.match(
+    /(?:^|\n)\s*[-*]?\s*\*{0,2}(?:Run|Start)(?:\s+Command)?\*{0,2}\s*[:=-]\s*\*{0,2}\s*`?([^\n`*]+)`?/i,
+  );
+  const testCommandsMatch = specMarkdown?.match(
+    /(?:^|\n)\s*[-*]?\s*\*{0,2}Test(?:\s+Command)?\*{0,2}\s*[:=-]\s*\*{0,2}\s*`?([^\n`*]+)`?/i,
+  );
 
-  const runCommand = runCommandsMatch?.[1]?.trim() ?? 'See SPEC.md for start command';
+  let inferredRunCmd: string | undefined;
+  if (createdFiles && createdFiles.length > 0) {
+    const pyMain = createdFiles.find(
+      (f) =>
+        f.endsWith('.py') &&
+        !f.includes('test') &&
+        !f.endsWith('__init__.py'),
+    );
+    const jsMain = createdFiles.find(
+      (f) => f.endsWith('.js') && !f.includes('test') && !f.includes('config'),
+    );
+    if (pyMain) inferredRunCmd = `python ${pyMain}`;
+    else if (jsMain) inferredRunCmd = `node ${jsMain}`;
+  }
+
+  const rawRunCmd = runCommandsMatch?.[1]?.trim();
+  const runCommand =
+    rawRunCmd && rawRunCmd.toLowerCase() !== 'none'
+      ? rawRunCmd
+      : (inferredRunCmd ?? 'See SPEC.md for start command');
   const testCommand = testCommandsMatch?.[1]?.trim() ?? 'See SPEC.md for test command';
 
   // Build task table

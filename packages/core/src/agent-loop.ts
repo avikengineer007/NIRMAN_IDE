@@ -43,7 +43,8 @@ You plan, build, and verify software projects inside a sandboxed environment.
 You have access to tools for reading, writing, editing files, searching, and running shell commands.
 Follow these principles:
 1. Focus strictly on implementing the requested task using tools to write and edit files.
-2. When the files for the current task are written, conclude your response WITHOUT calling any more tools so verification can run.
+2. CRITICAL FOR PYTHON / CLI PROGRAMS: Every main application script (e.g. calculator.py, main.py, app.py) MUST include an interactive or runnable \`if __name__ == "__main__":\` entry point at the bottom (with clear user prompts or output) so that running \`python <file>.py\` in the terminal immediately works! NEVER remove the \`if __name__ == "__main__":\` block when creating unit tests (because \`if __name__ == "__main__":\` does not run when imported by unittest).
+3. When the files for the current task are written or tests pass with exit code 0, conclude your response immediately WITHOUT calling any more tools so verification can finish.
 `;
 
 /**
@@ -622,6 +623,17 @@ export async function* runAgentLoop(
               await store.appendEvent(resultEvent);
               options.onEvent?.(resultEvent);
               yield resultEvent;
+
+              // If run_shell executed a test command and succeeded, guide the local model to conclude the step instead of looping
+              if (
+                toolCall.name === 'run_shell' &&
+                toolResult.success &&
+                typeof effectiveArgs['command'] === 'string' &&
+                /\b(unittest|pytest|test)\b/i.test(effectiveArgs['command'])
+              ) {
+                output +=
+                  '\n[SYSTEM NOTE: Test command succeeded with exit code 0 (OK). Do NOT rewrite files or re-run tests — reply with a brief final summary message and call NO more tools.]';
+              }
 
               taskMessages.push({
                 role: 'tool',

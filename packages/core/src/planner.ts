@@ -266,9 +266,13 @@ ${clarificationsText}
 
 Important Requirements:
 1. The workspace directory is the root of the project. Do NOT create an extra enclosing folder for the project; all files must be placed directly in the workspace root or standard subdirectories (e.g., src/).
-2. Keep the plan concise and high-level: 1 to 3 logical steps (e.g., Step 1: Implement application code and dependencies; Step 2: Verification and test cases). Do NOT create 10+ microscopic steps for individual terminal commands.
-3. Under SPEC.md "Build / Test / Run Commands", list the exact commands. If the user provided a test command in the project request, use it directly (e.g. \`- Test: node wordcount.js sample.txt\`). If no build step is needed, write \`- Build: None\`.
-4. STRICT RULE — DO NOT SHOW CODE IN PLAN.MD: Never include source code, function bodies, or code blocks inside plan.md. Instead, explain clearly HOW the agent will work on the project: the architectural approach, how each module/file will be structured and why, how components interact, and how the agent will verify and test the project.
+2. Keep the plan concise and high-level: 1 to 2 logical steps (e.g., Step 1: Implement interactive application code with a runnable entry point; Step 2: Verification and test cases). Do NOT create 10+ microscopic steps for individual terminal commands.
+3. For Python or CLI programs, Step 1 MUST specify that the main script includes an interactive or executable \`if __name__ == "__main__":\` CLI block so running \`python <script>.py\` in the terminal works directly for the user.
+4. Under SPEC.md "Build / Test / Run Commands", always list plain commands like:
+   - Build: None
+   - Run: python src/main.py
+   - Test: python -m unittest discover -s src/tests
+5. STRICT RULE — DO NOT SHOW CODE IN PLAN.MD: Never include source code, function bodies, or code blocks inside plan.md. Instead, explain clearly HOW the agent will work on the project: the architectural approach, how each module/file will be structured and why, how components interact, and how the agent will verify and test the project.
 
 Create two comprehensive artifacts:
 1. plan.md:

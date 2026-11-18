@@ -144,13 +144,20 @@ export class ExtensionController {
     if (/^(hi|hello|hey|who are you|what can you do)\b/i.test(lower)) {
       return true;
     }
+    if (
+      /\b(command to run|how to run|how do i run|give me the command|what is the command|how to execute|how to test|run it in terminal)\b/i.test(
+        lower,
+      )
+    ) {
+      return true;
+    }
     const hasBuildIntent =
       /\b(build|create|make|implement|write|generate|add|modify|edit|update|refactor|fix|delete|remove|setup|scaffold|develop)\b/i.test(
         lower,
       );
     const isQuestion =
       trimmed.endsWith('?') ||
-      /^(how|what|why|where|when|can you explain|explain|tell me|show me how)\b/i.test(lower);
+      /^(how|what|why|where|when|can you explain|explain|tell me|show me)\b/i.test(lower);
     return isQuestion && !hasBuildIntent;
   }
 
