@@ -1,0 +1,27 @@
+{
+  "name": "@nirman/cli",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "nirman": "./dist/bin.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "start": "node dist/bin.js"
+  },
+  "dependencies": {
+    "@nirman/artifacts": "workspace:*",
+    "@nirman/core": "workspace:*",
+    "@nirman/model": "workspace:*",
+    "@nirman/sandbox": "workspace:*",
+    "@nirman/tools": "workspace:*"
+  }
+}

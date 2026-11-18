@@ -1,0 +1,47 @@
+{
+  "name": "@nirman/vscode-ext",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@nirman/artifacts": "workspace:*",
+    "@nirman/model": "workspace:*",
+    "@nirman/server": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.146.0"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "nirman.openAgentManager",
+        "title": "Nirman: Open Agent Manager"
+      },
+      {
+        "command": "nirman.toggleAgentManager",
+        "title": "Nirman: Toggle Agent Manager"
+      },
+      {
+        "command": "nirman.focusEditor",
+        "title": "Nirman: Focus Active Editor"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "nirman.toggleAgentManager",
+        "key": "ctrl+alt+m",
+        "mac": "cmd+alt+m"
+      }
+    ]
+  }
+}

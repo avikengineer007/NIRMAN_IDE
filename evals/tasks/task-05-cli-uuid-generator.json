@@ -1,0 +1,14 @@
+{
+  "id": "task-05-cli-uuid-generator",
+  "title": "UUID and Slug Generator CLI",
+  "category": "cli",
+  "description": "Build a CLI in uuid-gen.js that generates v4 UUIDs or slugs. When passed --slug 'Hello World! How Are You?', outputs 'hello-world-how-are-you'.",
+  "checks": [
+    {
+      "type": "test",
+      "description": "Generates normalized URL slug from input string",
+      "command": "node uuid-gen.js --slug \"Hello World! How Are You?\"",
+      "expectedOutput": "hello-world-how-are-you"
+    }
+  ]
+}

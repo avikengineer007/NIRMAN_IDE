@@ -1,0 +1,17 @@
+{
+  "id": "task-02-cli-markdown-toc",
+  "title": "Markdown Table of Contents Generator",
+  "category": "cli",
+  "description": "Build a CLI in toc.js that reads README.md and extracts all markdown headings (# through ###) into a nested bulleted Table of Contents with slugified anchor links.",
+  "initialFiles": {
+    "README.md": "# Project Overview\n\n## Architecture\n\n### Core Loop\n\n## Getting Started\n"
+  },
+  "checks": [
+    {
+      "type": "test",
+      "description": "Generates markdown table of contents with anchors",
+      "command": "node toc.js README.md",
+      "expectedOutput": "- [Architecture](#architecture)"
+    }
+  ]
+}

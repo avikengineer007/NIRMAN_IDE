@@ -1,0 +1,18 @@
+{
+  "id": "task-17-ui-accordion-faq",
+  "title": "Accessible FAQ Accordion Component",
+  "category": "ui",
+  "description": "Build an accordion FAQ component in index.html with question headers and collapsible answer panels.",
+  "checks": [
+    {
+      "type": "ui",
+      "description": "index.html contains accordion FAQ questions and answers",
+      "filePath": "index.html",
+      "requiredKeywords": [
+        "accordion",
+        "question",
+        "answer"
+      ]
+    }
+  ]
+}

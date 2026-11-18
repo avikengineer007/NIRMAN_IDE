@@ -1,0 +1,17 @@
+{
+  "id": "task-04-cli-log-analyzer",
+  "title": "Web Server Access Log Analyzer",
+  "category": "cli",
+  "description": "Build a CLI in analyze.js that reads access.log, aggregates HTTP status codes (2xx, 4xx, 5xx), and prints total requests and error percentage in JSON format.",
+  "initialFiles": {
+    "access.log": "127.0.0.1 - - \"GET / HTTP/1.1\" 200\n127.0.0.1 - - \"GET /api HTTP/1.1\" 200\n127.0.0.1 - - \"GET /fail HTTP/1.1\" 500\n127.0.0.1 - - \"GET /missing HTTP/1.1\" 404\n"
+  },
+  "checks": [
+    {
+      "type": "test",
+      "description": "Aggregates access log requests and outputs status statistics",
+      "command": "node analyze.js access.log",
+      "expectedOutput": "\"totalRequests\": 4"
+    }
+  ]
+}

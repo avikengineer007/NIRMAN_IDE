@@ -1,0 +1,18 @@
+{
+  "id": "task-16-ui-shopping-cart",
+  "title": "E-Commerce Shopping Cart Widget",
+  "category": "ui",
+  "description": "Build an e-commerce shopping cart in index.html with item list, Add to Cart buttons, and total price calculation.",
+  "checks": [
+    {
+      "type": "ui",
+      "description": "index.html contains shopping cart item list and total price",
+      "filePath": "index.html",
+      "requiredKeywords": [
+        "cart",
+        "price",
+        "total"
+      ]
+    }
+  ]
+}

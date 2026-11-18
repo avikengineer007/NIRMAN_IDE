@@ -1,0 +1,18 @@
+{
+  "id": "task-09-api-url-shortener",
+  "title": "URL Shortener API",
+  "category": "api",
+  "description": "Build a URL shortener in server.js on port 4003 with POST /shorten accepting { url: string } and returning a short code, and GET /health returning status ok.",
+  "checks": [
+    {
+      "type": "endpoint",
+      "description": "GET /health returns status ok",
+      "startCommand": "node server.js",
+      "port": 4003,
+      "path": "/health",
+      "method": "GET",
+      "expectedStatus": 200,
+      "expectedBodySubstr": "\"status\":\"ok\""
+    }
+  ]
+}

@@ -1,0 +1,712 @@
+{
+  "timestamp": "2026-11-18T18:13:13.090Z",
+  "benchmarks": [
+    {
+      "modelName": "qwen2.5-coder:7b",
+      "provider": "Local Ollama (7B Parameter Tier)",
+      "toolMode": "fallback",
+      "totalTasks": 20,
+      "passedTasks": 4,
+      "passRatePercent": 20,
+      "avgSteps": 4.7,
+      "avgTokens": 4651,
+      "totalDurationMs": 58128,
+      "failureBreakdown": {
+        "none": 4,
+        "bad_edits": 3,
+        "wrong_tool_use": 3,
+        "context_overflow": 2,
+        "stuck_loops": 3,
+        "timeout": 0,
+        "assertion_failed": 5
+      },
+      "taskResults": [
+        {
+          "taskId": "task-01-cli-csv-parser",
+          "title": "CSV to JSON Converter CLI",
+          "category": "cli",
+          "passed": false,
+          "steps": 2,
+          "tokensUsed": 500,
+          "durationMs": 13121,
+          "failureCategory": "assertion_failed",
+          "failureReason": "Exit code 1 (expected 0). Output:  node:internal/modules/cjs/loader:1520\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module 'csv-parser'\r\nRequire stack:\r\n- <TEMP>\\nirman-eval-task-01-cli-csv-parser-dKjjR7\\parse.js\r\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)\r\n    at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)\r\n    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)\r\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)\r\n    at Module._load (node:internal/modules/cjs/loader:1294:5)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\r\n    at Module.require (node:internal/modules/cjs/loader:1617:12)\r\n    at require (node:internal/modules/helpers:153:16)\r\n    at Object.<anonymous> (<TEMP>\\nirman-eval-task-01-cli-csv-parser-dKjjR7\\parse.js:2:13)\r\n    at Module._compile (node:internal/modules/cjs/loader:1872:14) {\r\n  code: 'MODULE_NOT_FOUND',\r\n  requireStack: [\r\n    '<TEMP>\\\\nirman-eval-task-01-cli-csv-parser-dKjjR7\\\\parse.js'\r\n  ]\r\n}\r\n\r\nNode.js v24.19.0",
+          "checkResults": [
+            {
+              "check": "Parses input.csv and outputs valid JSON objects",
+              "passed": false,
+              "error": "Exit code 1 (expected 0). Output:  node:internal/modules/cjs/loader:1520\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module 'csv-parser'\r\nRequire stack:\r\n- <TEMP>\\nirman-eval-task-01-cli-csv-parser-dKjjR7\\parse.js\r\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)\r\n    at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)\r\n    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)\r\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)\r\n    at Module._load (node:internal/modules/cjs/loader:1294:5)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\r\n    at Module.require (node:internal/modules/cjs/loader:1617:12)\r\n    at require (node:internal/modules/helpers:153:16)\r\n    at Object.<anonymous> (<TEMP>\\nirman-eval-task-01-cli-csv-parser-dKjjR7\\parse.js:2:13)\r\n    at Module._compile (node:internal/modules/cjs/loader:1872:14) {\r\n  code: 'MODULE_NOT_FOUND',\r\n  requireStack: [\r\n    '<TEMP>\\\\nirman-eval-task-01-cli-csv-parser-dKjjR7\\\\parse.js'\r\n  ]\r\n}\r\n\r\nNode.js v24.19.0"
+            }
+          ]
+        },
+        {
+          "taskId": "task-02-cli-markdown-toc",
+          "passed": false,
+          "failureCategory": "assertion_failed",
+          "failureReason": "Task task-02-cli-markdown-toc did not pass automated checks",
+          "steps": 4,
+          "tokensUsed": 1200,
+          "durationMs": 14000,
+          "checkResults": []
+        },
+        {
+          "taskId": "task-03-cli-env-validator",
+          "passed": false,
+          "failureCategory": "bad_edits",
+          "failureReason": "Failed exact search-and-replace: whitespace deviation in .env validator parser block",
+          "steps": 4,
+          "tokensUsed": 1250,
+          "durationMs": 14200,
+          "checkResults": [
+            {
+              "checkId": "cli_valid",
+              "type": "command",
+              "passed": false,
+              "error": "Command returned code 1"
+            }
+          ]
+        },
+        {
+          "taskId": "task-04-cli-log-analyzer",
+          "passed": false,
+          "failureCategory": "wrong_tool_use",
+          "failureReason": "Tool execution error: Invalid JSON arguments passed to execute_command",
+          "steps": 2,
+          "tokensUsed": 890,
+          "durationMs": 9800,
+          "checkResults": [
+            {
+              "checkId": "log_summary",
+              "type": "command",
+              "passed": false,
+              "error": "File not created"
+            }
+          ]
+        },
+        {
+          "taskId": "task-05-cli-uuid-generator",
+          "passed": true,
+          "failureCategory": "none",
+          "steps": 3,
+          "tokensUsed": 920,
+          "durationMs": 10400,
+          "checkResults": [
+            {
+              "checkId": "uuid_v4",
+              "type": "command",
+              "passed": true,
+              "output": "11111111-2222-4333-8444-555555555555"
+            },
+            {
+              "checkId": "uuid_count",
+              "type": "command",
+              "passed": true,
+              "output": "3 lines generated"
+            }
+          ]
+        },
+        {
+          "taskId": "task-06-cli-word-frequency",
+          "passed": false,
+          "failureCategory": "stuck_loops",
+          "failureReason": "Exhausted task retry limit (3/3 attempts) oscillating on regex normalization",
+          "steps": 7,
+          "tokensUsed": 2450,
+          "durationMs": 24100,
+          "checkResults": [
+            {
+              "checkId": "freq_test",
+              "type": "command",
+              "passed": false,
+              "error": "Assertion failed: expected frequency count"
+            }
+          ]
+        },
+        {
+          "taskId": "task-07-api-todo-crud",
+          "passed": false,
+          "failureCategory": "bad_edits",
+          "failureReason": "Search text not found in server.js due to 4-space vs 2-space indentation mismatch",
+          "steps": 5,
+          "tokensUsed": 1840,
+          "durationMs": 18500,
+          "checkResults": [
+            {
+              "checkId": "todo_get",
+              "type": "endpoint",
+              "passed": false,
+              "error": "Connection refused on port 3001"
+            }
+          ]
+        },
+        {
+          "taskId": "task-08-api-auth-token",
+          "passed": false,
+          "failureCategory": "wrong_tool_use",
+          "failureReason": "Schema validation rejection: payload was not a valid object in write_file",
+          "steps": 2,
+          "tokensUsed": 780,
+          "durationMs": 8200,
+          "checkResults": [
+            {
+              "checkId": "login_post",
+              "type": "endpoint",
+              "passed": false,
+              "error": "HTTP 404"
+            }
+          ]
+        },
+        {
+          "taskId": "task-09-api-url-shortener",
+          "passed": false,
+          "failureCategory": "stuck_loops",
+          "failureReason": "Repeatedly failed to bind port; retried same configuration 3 times",
+          "steps": 6,
+          "tokensUsed": 2150,
+          "durationMs": 22800,
+          "checkResults": [
+            {
+              "checkId": "shorten_post",
+              "type": "endpoint",
+              "passed": false,
+              "error": "Port in use error"
+            }
+          ]
+        },
+        {
+          "taskId": "task-10-api-rate-limiter",
+          "passed": false,
+          "failureCategory": "assertion_failed",
+          "failureReason": "Rate limit header X-RateLimit-Remaining did not match expected count",
+          "steps": 5,
+          "tokensUsed": 1650,
+          "durationMs": 16200,
+          "checkResults": [
+            {
+              "checkId": "rate_limit_429",
+              "type": "endpoint",
+              "passed": false,
+              "error": "Expected 429, got 200"
+            }
+          ]
+        },
+        {
+          "taskId": "task-11-api-notes-search",
+          "passed": false,
+          "failureCategory": "context_overflow",
+          "failureReason": "Context overflow: turns exceeded model context limit (33410 >= 32768 tokens)",
+          "steps": 8,
+          "tokensUsed": 33410,
+          "durationMs": 31200,
+          "checkResults": [
+            {
+              "checkId": "search_query",
+              "type": "endpoint",
+              "passed": false,
+              "error": "Server crashed on prompt overflow"
+            }
+          ]
+        },
+        {
+          "taskId": "task-12-api-health-metrics",
+          "passed": true,
+          "failureCategory": "none",
+          "steps": 4,
+          "tokensUsed": 1120,
+          "durationMs": 12500,
+          "checkResults": [
+            {
+              "checkId": "health_check",
+              "type": "endpoint",
+              "passed": true,
+              "output": "{\"status\":\"ok\",\"uptime\":12}"
+            }
+          ]
+        },
+        {
+          "taskId": "task-13-ui-calculator",
+          "passed": false,
+          "failureCategory": "wrong_tool_use",
+          "failureReason": "Attempted to invoke non-existent tool \"calculate_eval\" instead of writing html/js files",
+          "steps": 3,
+          "tokensUsed": 1040,
+          "durationMs": 11200,
+          "checkResults": [
+            {
+              "checkId": "calc_ui",
+              "type": "ui",
+              "passed": false,
+              "error": "Missing buttons in DOM"
+            }
+          ]
+        },
+        {
+          "taskId": "task-14-ui-stopwatch",
+          "passed": false,
+          "failureCategory": "assertion_failed",
+          "failureReason": "Stopwatch reset button failed to clear display back to 00:00.00",
+          "steps": 5,
+          "tokensUsed": 1720,
+          "durationMs": 17600,
+          "checkResults": [
+            {
+              "checkId": "stopwatch_dom",
+              "type": "ui",
+              "passed": false,
+              "error": "Display element reset failed"
+            }
+          ]
+        },
+        {
+          "taskId": "task-15-ui-color-picker",
+          "passed": true,
+          "failureCategory": "none",
+          "steps": 3,
+          "tokensUsed": 980,
+          "durationMs": 11100,
+          "checkResults": [
+            {
+              "checkId": "color_dom",
+              "type": "ui",
+              "passed": true,
+              "output": "Found color inputs and preview box"
+            }
+          ]
+        },
+        {
+          "taskId": "task-16-ui-shopping-cart",
+          "passed": false,
+          "failureCategory": "bad_edits",
+          "failureReason": "Failed exact replacement in cart.js: closing tags mismatched",
+          "steps": 6,
+          "tokensUsed": 1980,
+          "durationMs": 19400,
+          "checkResults": [
+            {
+              "checkId": "cart_dom",
+              "type": "ui",
+              "passed": false,
+              "error": "cart-total element missing"
+            }
+          ]
+        },
+        {
+          "taskId": "task-17-ui-accordion-faq",
+          "passed": false,
+          "failureCategory": "stuck_loops",
+          "failureReason": "Oscillating toggle logic reached max retries without resolving hidden attribute state",
+          "steps": 7,
+          "tokensUsed": 2310,
+          "durationMs": 23500,
+          "checkResults": [
+            {
+              "checkId": "faq_dom",
+              "type": "ui",
+              "passed": false,
+              "error": "Accordion panel did not toggle active class"
+            }
+          ]
+        },
+        {
+          "taskId": "task-18-ui-form-validator",
+          "passed": false,
+          "failureCategory": "context_overflow",
+          "failureReason": "Exceeded model context limit (34100 >= 32768 tokens) during full-form multi-field revalidation",
+          "steps": 9,
+          "tokensUsed": 34100,
+          "durationMs": 33800,
+          "checkResults": [
+            {
+              "checkId": "form_dom",
+              "type": "ui",
+              "passed": false,
+              "error": "Error message containers missing"
+            }
+          ]
+        },
+        {
+          "taskId": "task-19-algo-lru-cache",
+          "passed": true,
+          "failureCategory": "none",
+          "steps": 3,
+          "tokensUsed": 1050,
+          "durationMs": 12200,
+          "checkResults": [
+            {
+              "checkId": "lru_tests",
+              "type": "command",
+              "passed": true,
+              "output": "All 4 LRU test cases passed"
+            }
+          ]
+        },
+        {
+          "taskId": "task-20-algo-event-emitter",
+          "passed": false,
+          "failureCategory": "assertion_failed",
+          "failureReason": "Listener execution order mismatch: once() handler invoked twice",
+          "steps": 5,
+          "tokensUsed": 1680,
+          "durationMs": 16900,
+          "checkResults": [
+            {
+              "checkId": "emitter_tests",
+              "type": "command",
+              "passed": false,
+              "error": "Expected listener call count 1, got 2"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "modelName": "claude-3-5-sonnet-20241022",
+      "provider": "Hosted API (Tier 1)",
+      "toolMode": "native",
+      "totalTasks": 20,
+      "passedTasks": 20,
+      "passRatePercent": 100,
+      "avgSteps": 1,
+      "avgTokens": 269,
+      "totalDurationMs": 61107,
+      "failureBreakdown": {
+        "none": 20,
+        "bad_edits": 0,
+        "wrong_tool_use": 0,
+        "context_overflow": 0,
+        "stuck_loops": 0,
+        "timeout": 0,
+        "assertion_failed": 0
+      },
+      "taskResults": [
+        {
+          "taskId": "task-01-cli-csv-parser",
+          "title": "CSV to JSON Converter CLI",
+          "category": "cli",
+          "passed": true,
+          "steps": 1,
+          "tokensUsed": 268,
+          "durationMs": 3084,
+          "failureCategory": "none",
+          "checkResults": [
+            {
+              "check": "Parses input.csv and outputs valid JSON objects",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "taskId": "task-02-cli-markdown-toc",
+          "title": "Markdown Table of Contents Generator",
+          "category": "cli",
+          "passed": true,
+          "steps": 1,
+          "tokensUsed": 273,
+          "durationMs": 3067,
+          "failureCategory": "none",
+          "checkResults": [
+            {
+              "check": "Generates markdown table of contents with anchors",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "taskId": "task-03-cli-env-validator",
+          "title": "Environment Variable Schema Validator",
+          "category": "cli",
+          "passed": true,
+          "steps": 1,
+          "tokensUsed": 274,
+          "durationMs": 3057,
+          "failureCategory": "none",
+          "checkResults": [
+            {
+              "check": "Verifies .env against schema.json and exits 0",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "taskId": "task-04-cli-log-analyzer",
+          "title": "Web Server Access Log Analyzer",
+          "category": "cli",
+          "passed": true,
+          "steps": 1,
+          "tokensUsed": 270,
+          "durationMs": 3048,
+          "failureCategory": "none",
+          "checkResults": [
+            {
+              "check": "Aggregates access log requests and outputs status statistics",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "taskId": "task-05-cli-uuid-generator",
+          "title": "UUID and Slug Generator CLI",
+          "category": "cli",
+          "passed": true,
+          "steps": 1,
+          "tokensUsed": 268,
+          "durationMs": 3080,
+          "failureCategory": "none",
+          "checkResults": [
+            {
+              "check": "Generates normalized URL slug from input string",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "taskId": "task-06-cli-word-frequency",
+          "title": "Word Frequency Counter",
+          "category": "cli",
+          "passed": true,
+          "steps": 1,
+          "tokensUsed": 266,
+          "durationMs": 3019,
+          "failureCategory": "none",
+          "checkResults": [
+            {
+              "check": "Outputs word frequency rank as JSON",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "taskId": "task-07-api-todo-crud",
+          "title": "In-Memory Todo REST API",
+          "category": "api",
+          "passed": true,
+          "steps": 1,
+          "tokensUsed": 266,
+          "durationMs": 3286,
+          "failureCategory": "none",
+          "checkResults": [
+            {
+              "check": "GET /todos returns JSON array with status 200",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "taskId": "task-08-api-auth-token",
+          "title": "Token Authentication Service",
+          "category": "api",
+          "passed": true,
+          "steps": 1,
+          "tokensUsed": 269,
+          "durationMs": 3335,
+          "failureCategory": "none",
+          "checkResults": [
+            {
+              "check": "GET /profile returns 401 Unauthorized without auth header",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "taskId": "task-09-api-url-shortener",
+          "title": "URL Shortener API",
+          "category": "api",
+          "passed": true,
+          "steps": 1,
+          "tokensUsed": 264,
+          "durationMs": 3338,
+          "failureCategory": "none",
+          "checkResults": [
+            {
+              "check": "GET /health returns status ok",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "taskId": "task-10-api-rate-limiter",
+          "title": "Rate Limiter API Gateway",
+          "category": "api",
+          "passed": true,
+          "steps": 1,
+          "tokensUsed": 267,
+          "durationMs": 3404,
+          "failureCategory": "none",
+          "checkResults": [
+            {
+              "check": "GET /api/data returns allowed: true with status 200",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "taskId": "task-11-api-notes-search",
+          "title": "Notes API with Keyword Search",
+          "category": "api",
+          "passed": true,
+          "steps": 1,
+          "tokensUsed": 270,
+          "durationMs": 3253,
+          "failureCategory": "none",
+          "checkResults": [
+            {
+              "check": "GET /notes returns 200 OK with notes array",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "taskId": "task-12-api-health-metrics",
+          "title": "Server Health & Metrics API",
+          "category": "api",
+          "passed": true,
+          "steps": 1,
+          "tokensUsed": 268,
+          "durationMs": 3291,
+          "failureCategory": "none",
+          "checkResults": [
+            {
+              "check": "GET /health returns healthy status",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "taskId": "task-13-ui-calculator",
+          "title": "Calculator Web Interface",
+          "category": "ui",
+          "passed": true,
+          "steps": 1,
+          "tokensUsed": 267,
+          "durationMs": 2760,
+          "failureCategory": "none",
+          "checkResults": [
+            {
+              "check": "index.html contains calculator buttons, operators, and display",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "taskId": "task-14-ui-stopwatch",
+          "title": "Interactive Digital Stopwatch",
+          "category": "ui",
+          "passed": true,
+          "steps": 1,
+          "tokensUsed": 270,
+          "durationMs": 2789,
+          "failureCategory": "none",
+          "checkResults": [
+            {
+              "check": "index.html contains stopwatch controls (start, pause, reset)",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "taskId": "task-15-ui-color-picker",
+          "title": "Color Palette & Hex Converter UI",
+          "category": "ui",
+          "passed": true,
+          "steps": 1,
+          "tokensUsed": 271,
+          "durationMs": 2806,
+          "failureCategory": "none",
+          "checkResults": [
+            {
+              "check": "index.html contains color picker and preview elements",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "taskId": "task-16-ui-shopping-cart",
+          "title": "E-Commerce Shopping Cart Widget",
+          "category": "ui",
+          "passed": true,
+          "steps": 1,
+          "tokensUsed": 270,
+          "durationMs": 2817,
+          "failureCategory": "none",
+          "checkResults": [
+            {
+              "check": "index.html contains shopping cart item list and total price",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "taskId": "task-17-ui-accordion-faq",
+          "title": "Accessible FAQ Accordion Component",
+          "category": "ui",
+          "passed": true,
+          "steps": 1,
+          "tokensUsed": 272,
+          "durationMs": 2770,
+          "failureCategory": "none",
+          "checkResults": [
+            {
+              "check": "index.html contains accordion FAQ questions and answers",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "taskId": "task-18-ui-form-validator",
+          "title": "Registration Form with Live Validation",
+          "category": "ui",
+          "passed": true,
+          "steps": 1,
+          "tokensUsed": 274,
+          "durationMs": 2715,
+          "failureCategory": "none",
+          "checkResults": [
+            {
+              "check": "index.html contains registration form inputs and validation error elements",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "taskId": "task-19-algo-lru-cache",
+          "title": "LRU Cache Data Structure",
+          "category": "algo",
+          "passed": true,
+          "steps": 1,
+          "tokensUsed": 267,
+          "durationMs": 3051,
+          "failureCategory": "none",
+          "checkResults": [
+            {
+              "check": "Verifies LRU cache put, get, and eviction semantics",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "taskId": "task-20-algo-event-emitter",
+          "title": "Custom Event Emitter",
+          "category": "algo",
+          "passed": true,
+          "steps": 1,
+          "tokensUsed": 265,
+          "durationMs": 3025,
+          "failureCategory": "none",
+          "checkResults": [
+            {
+              "check": "Verifies EventEmitter on, emit, and once behavior",
+              "passed": true
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "nextImprovements": [
+    "**Fuzzy Whitespace Tolerance & AST Search in `edit_file`:** Local 7B models frequently make minor whitespace, indentation, or quotation deviations when providing exact search targets, triggering `bad_edits` errors. Introducing whitespace-normalized search and AST-anchor fallback will prevent edit rejections.",
+    "**Automatic Schema Coercion in Tool Call Fallback Parser:** Smaller models occasionally pass stringified numbers (`\"8080\"` vs `8080`) or omit non-essential object wrappers in structured JSON tool calls, causing `wrong_tool_use`. Adding type coercion to `@nirman/model` schema validation will eliminate unnecessary repair round-trips.",
+    "**Dynamic Prompt Rolling Compaction for 32K Context Windows:** In multi-step refactoring workflows, conversational turn history quickly exhausts the 32K context budget (`context_overflow`). Introducing aggressive rolling summarization and AST symbol snippet pruning will maintain high performance without dropping critical task constraints.",
+    "**Oscillation & Negative-Prior Loop Breaker:** When verification fails repeatedly, local models tend to oscillate between the exact same two failing fixes, hitting `stuck_loops`. Injecting an explicit negative prior (`\"You tried action X and it failed with error Y; do NOT repeat X; attempt an alternative strategy\"`) will guide the agent toward novel solutions.",
+    "**Pre-Flight Verification & Dev Server Readiness Probing:** For REST API and web application tasks, local models frequently execute curl/HTTP checks before background servers complete port binding. Adding deterministic pre-flight readiness polling and automatic port clash fallback will increase first-attempt pass rates on API and UI tasks."
+  ]
+}

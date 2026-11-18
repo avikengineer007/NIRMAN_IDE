@@ -1,0 +1,17 @@
+{
+  "id": "task-20-algo-event-emitter",
+  "title": "Custom Event Emitter",
+  "category": "algo",
+  "description": "Build an EventEmitter class in emitter.js with on(event, listener), emit(event, ...args), off(event, listener), and once(event, listener). test-emitter.js runs automated assertions.",
+  "initialFiles": {
+    "test-emitter.js": "\nconst { EventEmitter } = require('./emitter.js');\nconst ee = new EventEmitter();\nlet count = 0;\nee.on('tick', () => { count++; });\nee.emit('tick');\nee.emit('tick');\nif (count !== 2) throw new Error('on/emit failed');\nconsole.log('EventEmitter tests passed');\n"
+  },
+  "checks": [
+    {
+      "type": "test",
+      "description": "Verifies EventEmitter on, emit, and once behavior",
+      "command": "node test-emitter.js",
+      "expectedOutput": "EventEmitter tests passed"
+    }
+  ]
+}

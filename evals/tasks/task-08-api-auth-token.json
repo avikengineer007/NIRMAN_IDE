@@ -1,0 +1,17 @@
+{
+  "id": "task-08-api-auth-token",
+  "title": "Token Authentication Service",
+  "category": "api",
+  "description": "Build an HTTP service in server.js on port 4002 with POST /login returning { token: \"secret-token\" }, and GET /profile requiring Authorization: Bearer secret-token (returning 401 without it).",
+  "checks": [
+    {
+      "type": "endpoint",
+      "description": "GET /profile returns 401 Unauthorized without auth header",
+      "startCommand": "node server.js",
+      "port": 4002,
+      "path": "/profile",
+      "method": "GET",
+      "expectedStatus": 401
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "id": "task-03-cli-env-validator",
+  "title": "Environment Variable Schema Validator",
+  "category": "cli",
+  "description": "Build a CLI in env-check.js that reads schema.json and .env, verifying that required environment variables exist and match specified types. Exits 0 if valid, 1 if missing.",
+  "initialFiles": {
+    "schema.json": "{\"PORT\": \"number\", \"DATABASE_URL\": \"string\", \"DEBUG\": \"boolean\"}",
+    ".env": "PORT=8080\nDATABASE_URL=postgres://localhost:5432/app\nDEBUG=true\n"
+  },
+  "checks": [
+    {
+      "type": "test",
+      "description": "Verifies .env against schema.json and exits 0",
+      "command": "node env-check.js",
+      "expectedExitCode": 0
+    }
+  ]
+}

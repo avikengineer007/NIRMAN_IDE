@@ -1,0 +1,17 @@
+{
+  "id": "task-19-algo-lru-cache",
+  "title": "LRU Cache Data Structure",
+  "category": "algo",
+  "description": "Build an LRUCache class in lru.js with constructor(capacity), get(key), and put(key, value). When capacity is exceeded, evicts the least recently used key. A test script test-lru.js tests put, get, and eviction.",
+  "initialFiles": {
+    "test-lru.js": "\nconst { LRUCache } = require('./lru.js');\nconst cache = new LRUCache(2);\ncache.put(1, 1);\ncache.put(2, 2);\nif (cache.get(1) !== 1) throw new Error('get(1) failed');\ncache.put(3, 3); // evicts 2\nif (cache.get(2) !== -1 && cache.get(2) !== undefined) throw new Error('eviction failed');\nconsole.log('LRU Cache tests passed');\n"
+  },
+  "checks": [
+    {
+      "type": "test",
+      "description": "Verifies LRU cache put, get, and eviction semantics",
+      "command": "node test-lru.js",
+      "expectedOutput": "LRU Cache tests passed"
+    }
+  ]
+}

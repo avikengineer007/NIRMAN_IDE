@@ -1,0 +1,18 @@
+{
+  "id": "task-14-ui-stopwatch",
+  "title": "Interactive Digital Stopwatch",
+  "category": "ui",
+  "description": "Build a digital stopwatch in index.html and stopwatch.js with Start, Pause, and Reset controls and elapsed time display.",
+  "checks": [
+    {
+      "type": "ui",
+      "description": "index.html contains stopwatch controls (start, pause, reset)",
+      "filePath": "index.html",
+      "requiredKeywords": [
+        "start",
+        "pause",
+        "reset"
+      ]
+    }
+  ]
+}

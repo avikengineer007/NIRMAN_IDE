@@ -1,0 +1,18 @@
+{
+  "id": "task-15-ui-color-picker",
+  "title": "Color Palette & Hex Converter UI",
+  "category": "ui",
+  "description": "Build a color picker interface in index.html with color input, hex-to-rgb converter, and preview swatch.",
+  "checks": [
+    {
+      "type": "ui",
+      "description": "index.html contains color picker and preview elements",
+      "filePath": "index.html",
+      "requiredKeywords": [
+        "color",
+        "hex",
+        "rgb"
+      ]
+    }
+  ]
+}

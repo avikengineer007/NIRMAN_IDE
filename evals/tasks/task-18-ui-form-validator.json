@@ -1,0 +1,18 @@
+{
+  "id": "task-18-ui-form-validator",
+  "title": "Registration Form with Live Validation",
+  "category": "ui",
+  "description": "Build a registration form in index.html with email, password, and error display for validation.",
+  "checks": [
+    {
+      "type": "ui",
+      "description": "index.html contains registration form inputs and validation error elements",
+      "filePath": "index.html",
+      "requiredKeywords": [
+        "form",
+        "email",
+        "password"
+      ]
+    }
+  ]
+}

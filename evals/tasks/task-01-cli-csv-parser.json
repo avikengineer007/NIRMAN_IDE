@@ -1,0 +1,17 @@
+{
+  "id": "task-01-cli-csv-parser",
+  "title": "CSV to JSON Converter CLI",
+  "category": "cli",
+  "description": "Build a CLI in parse.js that takes a CSV file path as an argument and outputs a valid JSON array of objects representing the rows.",
+  "initialFiles": {
+    "input.csv": "name,age,role\nAlice,30,Developer\nBob,25,Designer\nCharlie,35,Manager\n"
+  },
+  "checks": [
+    {
+      "type": "test",
+      "description": "Parses input.csv and outputs valid JSON objects",
+      "command": "node parse.js input.csv",
+      "expectedOutput": "\"name\": \"Alice\""
+    }
+  ]
+}

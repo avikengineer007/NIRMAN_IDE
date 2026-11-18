@@ -1,0 +1,26 @@
+{
+  "name": "@nirman/core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@nirman/artifacts": "workspace:*",
+    "@nirman/browser": "workspace:*",
+    "@nirman/model": "workspace:*",
+    "@nirman/sandbox": "workspace:*",
+    "@nirman/security": "workspace:*",
+    "@nirman/tools": "workspace:*",
+    "tree-sitter-wasms": "^0.1.13",
+    "web-tree-sitter": "^0.20.8"
+  }
+}

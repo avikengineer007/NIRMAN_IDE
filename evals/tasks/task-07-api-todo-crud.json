@@ -1,0 +1,18 @@
+{
+  "id": "task-07-api-todo-crud",
+  "title": "In-Memory Todo REST API",
+  "category": "api",
+  "description": "Build an HTTP REST API in server.js on port 4001 with GET /todos returning an array of items, and POST /todos creating a new item with id and title.",
+  "checks": [
+    {
+      "type": "endpoint",
+      "description": "GET /todos returns JSON array with status 200",
+      "startCommand": "node server.js",
+      "port": 4001,
+      "path": "/todos",
+      "method": "GET",
+      "expectedStatus": 200,
+      "expectedBodySubstr": "[]"
+    }
+  ]
+}

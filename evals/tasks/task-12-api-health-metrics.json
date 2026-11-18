@@ -1,0 +1,18 @@
+{
+  "id": "task-12-api-health-metrics",
+  "title": "Server Health & Metrics API",
+  "category": "api",
+  "description": "Build a server in server.js on port 4006 with GET /health returning { status: \"healthy\", uptime: number }.",
+  "checks": [
+    {
+      "type": "endpoint",
+      "description": "GET /health returns healthy status",
+      "startCommand": "node server.js",
+      "port": 4006,
+      "path": "/health",
+      "method": "GET",
+      "expectedStatus": 200,
+      "expectedBodySubstr": "\"status\":\"healthy\""
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "nameShort": "NIRMAN",
+  "nameLong": "NIRMAN Agentic Studio",
+  "applicationName": "nirman",
+  "dataFolderName": ".nirman",
+  "win32AppId": "{{E3D0A8B7-77F1-4F23-96BB-NIRMANIDE}}",
+  "win32x64AppId": "{{E3D0A8B7-77F1-4F23-96BB-NIRMANIDEX64}}",
+  "win32UserAppId": "{{E3D0A8B7-77F1-4F23-96BB-NIRMANIDEUSER}}",
+  "win32x64UserAppId": "{{E3D0A8B7-77F1-4F23-96BB-NIRMANIDEX64USER}}",
+  "win32DirName": "NIRMAN Studio",
+  "win32NameVersion": "NIRMAN Studio",
+  "win32RegValueName": "NIRMAN",
+  "win32AppUserModelId": "NIRMAN.Studio",
+  "win32ShellNameShort": "NIRMAN",
+  "urlProtocol": "nirman",
+  "version": "1.0.0",
+  "commit": "nirman-oss-v1",
+  "date": "2026-11-18T18:00:00.000Z",
+  "serverGreeting": [
+    "",
+    "  * NIRMAN Agentic Studio (MIT Fork of Code-OSS)",
+    "  * Telemetry: Disabled",
+    "  * Extension Marketplace: Open VSX",
+    ""
+  ],
+  "serverLicense": [
+    "NIRMAN Agentic Studio is licensed under the MIT License."
+  ],
+  "serverLicensePrompt": "By using NIRMAN, you agree to the software license terms.",
+  "extensionsGallery": {
+    "serviceUrl": "https://open-vsx.org/vscode/gallery",
+    "itemUrl": "https://open-vsx.org/vscode/item",
+    "cacheUrl": "https://open-vsx.org/vscode/cache",
+    "controlUrl": "https://open-vsx.org/vscode/control"
+  },
+  "builtInExtensions": [
+    {
+      "name": "nirman-agent-core",
+      "version": "1.0.0",
+      "package": "@nirman/vscode-ext"
+    }
+  ],
+  "enableTelemetry": false,
+  "telemetry": "off",
+  "crashReporter": {
+    "companyName": "NIRMAN",
+    "productName": "NIRMAN"
+  },
+  "sendASmile": {
+    "reportIssueUrl": "https://github.com/nirman/nirman/issues",
+    "requestFeatureUrl": "https://github.com/nirman/nirman/issues"
+  },
+  "documentationUrl": "https://github.com/nirman/nirman/tree/main/docs",
+  "licenseUrl": "https://github.com/nirman/nirman/blob/main/LICENSE",
+  "win32IconUrl": "resources/nirman.ico",
+  "win32AppIcon": "resources/nirman.ico"
+}

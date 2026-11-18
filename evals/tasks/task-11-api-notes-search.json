@@ -1,0 +1,18 @@
+{
+  "id": "task-11-api-notes-search",
+  "title": "Notes API with Keyword Search",
+  "category": "api",
+  "description": "Build an API in server.js on port 4005 with GET /notes?q=keyword returning items matching query.",
+  "checks": [
+    {
+      "type": "endpoint",
+      "description": "GET /notes returns 200 OK with notes array",
+      "startCommand": "node server.js",
+      "port": 4005,
+      "path": "/notes",
+      "method": "GET",
+      "expectedStatus": 200,
+      "expectedBodySubstr": "[]"
+    }
+  ]
+}

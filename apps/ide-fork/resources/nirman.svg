@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="nirmanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0e639c" />
+      <stop offset="50%" stop-color="#1f883d" />
+      <stop offset="100%" stop-color="#58a6ff" />
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="#18181b" />
+  <path d="M 32 96 L 32 32 L 52 32 L 76 72 L 76 32 L 96 32 L 96 96 L 76 96 L 52 56 L 52 96 Z" fill="url(#nirmanGrad)" />
+  <circle cx="96" cy="32" r="8" fill="#58a6ff" />
+</svg>

@@ -1,0 +1,25 @@
+{
+  "name": "@nirman/ide-fork",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "package:win32": "node ./dist/scripts/build-win32.js"
+  },
+  "dependencies": {
+    "@nirman/model": "workspace:*",
+    "@nirman/server": "workspace:*",
+    "@nirman/vscode-ext": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "id": "task-13-ui-calculator",
+  "title": "Calculator Web Interface",
+  "category": "ui",
+  "description": "Build a web calculator in index.html and app.js with number buttons, operators (+, -, *, /), and a calculation display.",
+  "checks": [
+    {
+      "type": "ui",
+      "description": "index.html contains calculator buttons, operators, and display",
+      "filePath": "index.html",
+      "requiredKeywords": [
+        "button",
+        "display",
+        "operator"
+      ]
+    }
+  ]
+}

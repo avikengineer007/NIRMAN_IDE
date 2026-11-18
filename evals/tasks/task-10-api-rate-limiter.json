@@ -1,0 +1,18 @@
+{
+  "id": "task-10-api-rate-limiter",
+  "title": "Rate Limiter API Gateway",
+  "category": "api",
+  "description": "Build an HTTP API in server.js on port 4004 with a rate limiter allowing requests under limit, returning JSON with allowed: true.",
+  "checks": [
+    {
+      "type": "endpoint",
+      "description": "GET /api/data returns allowed: true with status 200",
+      "startCommand": "node server.js",
+      "port": 4004,
+      "path": "/api/data",
+      "method": "GET",
+      "expectedStatus": 200,
+      "expectedBodySubstr": "\"allowed\":true"
+    }
+  ]
+}
