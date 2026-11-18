@@ -457,13 +457,16 @@ try {
         New-Item -ItemType Directory -Force -Path $ProjectsDir | Out-Null
     }
 
-    $ideArgs = @($ProjectsDir)
+    $ideArgs = @()
     if ($SampleTask) {
+        $ideArgs += $ProjectsDir
         $ideArgs += "--run-sample-task"
         Write-Log "INFO" "Executing sample task: Build a greeting CLI in workspace..."
         $sampleFile = Join-Path $ProjectsDir "hello-nirman.js"
         'console.log("Hello from NIRMAN Agentic Studio!");' | Set-Content -Path $sampleFile -Force
         Write-Log "PASS" "Sample task completed successfully! Created $sampleFile"
+    } elseif ($PSBoundParameters.ContainsKey('ProjectsDir')) {
+        $ideArgs += $ProjectsDir
     }
 
     # Ensure ELECTRON_RUN_AS_NODE is unset so Electron launches as GUI window
@@ -473,7 +476,11 @@ try {
     $runArgs = if (Test-Path $IdeRealExe) { $ideArgs } elseif (Test-Path $IdeCmd) { $ideArgs } else { @((Join-Path $InstallDir "main.js")) + $ideArgs }
 
     Write-Log "INFO" "Opening IDE in workspace: $ProjectsDir"
-    $ideProcess = Start-Process -FilePath $ideRunner -ArgumentList $runArgs -PassThru
+    if ($runArgs.Count -gt 0) {
+        $ideProcess = Start-Process -FilePath $ideRunner -ArgumentList $runArgs -PassThru
+    } else {
+        $ideProcess = Start-Process -FilePath $ideRunner -PassThru
+    }
     $t4_ideOpened = Get-Date
 
     # Write Cold Start Timing Summary
