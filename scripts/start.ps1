@@ -451,7 +451,7 @@ try {
         $ideArgs += "--run-sample-task"
         Write-Log "INFO" "Executing sample task: Build a greeting CLI in workspace..."
         $sampleFile = Join-Path $ProjectsDir "hello-nirman.js"
-        "console.log(`"Hello from NIRMAN Agentic Studio!`");" | Set-Content -Path $sampleFile -Force
+        'console.log("Hello from NIRMAN Agentic Studio!");' | Set-Content -Path $sampleFile -Force
         Write-Log "PASS" "Sample task completed successfully! Created $sampleFile"
     }
 
