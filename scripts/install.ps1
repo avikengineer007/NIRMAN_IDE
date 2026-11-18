@@ -234,6 +234,14 @@ $ServerDist = Join-Path $RepoRoot "packages\server\dist"
 if (Test-Path $ServerDist) {
     Copy-Item -Path "$ServerDist\*" -Destination (Join-Path $InstallDir "server\dist") -Recurse -Force
     Copy-Item -Path "$RepoRoot\packages\server\package.json" -Destination (Join-Path $InstallDir "server\package.json") -Force
+    $rootNodeModules = Join-Path $InstallDir "node_modules"
+    $serverNodeModules = Join-Path $InstallDir "server\node_modules"
+    if (-not (Test-Path $rootNodeModules) -and (Test-Path (Join-Path $RepoRoot "node_modules"))) {
+        New-Item -ItemType Junction -Path $rootNodeModules -Target (Join-Path $RepoRoot "node_modules") | Out-Null
+    }
+    if (-not (Test-Path $serverNodeModules) -and (Test-Path (Join-Path $RepoRoot "packages\server\node_modules"))) {
+        New-Item -ItemType Junction -Path $serverNodeModules -Target (Join-Path $RepoRoot "packages\server\node_modules") | Out-Null
+    }
     Write-Success "Installed NIRMAN Agent Server runtime to server\"
 }
 

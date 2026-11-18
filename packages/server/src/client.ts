@@ -50,6 +50,10 @@ export class NirmanClient {
     this.timeoutMs = options.timeoutMs ?? 15_000;
   }
 
+  public setToken(token: string): void {
+    this.token = token;
+  }
+
   /**
    * Connects to the daemon WebSocket endpoint.
    */

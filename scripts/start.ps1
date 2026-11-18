@@ -70,16 +70,16 @@ Get-ChildItem -Path $LogsDir -Filter "*.log" -File -ErrorAction SilentlyContinue
     Move-Item -Path $basePath -Destination "$basePath.1" -Force -ErrorAction SilentlyContinue
 }
 
-$StartupLog  = Join-Path $LogsDir "startup.log"
-$SessionLog  = Join-Path $LogsDir "session.log"
+$StartupLog = Join-Path $LogsDir "startup.log"
+$SessionLog = Join-Path $LogsDir "session.log"
 $LlamaOutLog = Join-Path $LogsDir "llama-server.out.log"
 $LlamaErrLog = Join-Path $LogsDir "llama-server.err.log"
-$LlamaLog    = Join-Path $LogsDir "llama-server.log"
+$LlamaLog = Join-Path $LogsDir "llama-server.log"
 $AgentOutLog = Join-Path $LogsDir "agent-server.out.log"
 $AgentErrLog = Join-Path $LogsDir "agent-server.err.log"
-$AgentLog    = Join-Path $LogsDir "agent-server.log"
-$PidsFile    = Join-Path $LogsDir "pids.json"
-$LockFile    = Join-Path $InstallDir "nirman.lock"
+$AgentLog = Join-Path $LogsDir "agent-server.log"
+$PidsFile = Join-Path $LogsDir "pids.json"
+$LockFile = Join-Path $InstallDir "nirman.lock"
 
 function Write-Log {
     param(
@@ -93,10 +93,10 @@ function Write-Log {
     # Console output
     Write-Host "[$ts] " -NoNewline -ForegroundColor DarkGray
     switch ($Level) {
-        "INFO"  { Write-Host "[$Level] " -NoNewline -ForegroundColor Cyan }
-        "WARN"  { Write-Host "[$Level] " -NoNewline -ForegroundColor Yellow }
+        "INFO" { Write-Host "[$Level] " -NoNewline -ForegroundColor Cyan }
+        "WARN" { Write-Host "[$Level] " -NoNewline -ForegroundColor Yellow }
         "ERROR" { Write-Host "[$Level] " -NoNewline -ForegroundColor Red }
-        "PASS"  { Write-Host "[$Level] " -NoNewline -ForegroundColor Green }
+        "PASS" { Write-Host "[$Level] " -NoNewline -ForegroundColor Green }
         default { Write-Host "[$Level] " -NoNewline -ForegroundColor White }
     }
     Write-Host $Message -ForegroundColor $Color
@@ -126,7 +126,8 @@ function Test-LockLive([string]$path) {
 
         if ($raw -match '^\d+$') {
             $pidNum = [int]$raw
-        } else {
+        }
+        else {
             $data = $raw | ConvertFrom-Json -ErrorAction Stop
             $pidNum = [int]$data.pid
             if ($data.startTime) { $lockStartTime = [DateTime]::Parse($data.startTime) }
@@ -152,7 +153,8 @@ function Test-LockLive([string]$path) {
         }
 
         return @{ Live = $true; Process = $proc; Pid = $pidNum }
-    } catch {
+    }
+    catch {
         return @{ Live = $false; Reason = "Corrupt lock file: $_" }
     }
 }
@@ -183,10 +185,12 @@ if (Test-Path $LockFile) {
                     [Win32Gui]::SetForegroundWindow($w.MainWindowHandle) | Out-Null
                 }
             }
-        } catch {}
+        }
+        catch {}
 
         exit 2
-    } else {
+    }
+    else {
         Write-Log "INFO" "Cleaning up stale lock file: $($lockStatus.Reason)"
         Remove-Item $LockFile -Force -ErrorAction SilentlyContinue
     }
@@ -216,7 +220,8 @@ foreach ($p in $candidateProcs) {
         if ($p.Path -and $p.Path.StartsWith($InstallDir, [System.StringComparison]::OrdinalIgnoreCase)) {
             $isOurs = $true
         }
-    } catch {}
+    }
+    catch {}
 
     if (-not $isOurs) {
         try {
@@ -224,7 +229,8 @@ foreach ($p in $candidateProcs) {
             if ($wmi -and $wmi.CommandLine -and $wmi.CommandLine.IndexOf($InstallDir, [System.StringComparison]::OrdinalIgnoreCase) -ge 0) {
                 $isOurs = $true
             }
-        } catch {}
+        }
+        catch {}
     }
 
     if ($isOurs) {
@@ -279,14 +285,15 @@ try {
         $env:GGML_BACKEND_PATH = Join-Path $cudaDir "ggml-cuda.dll"
         $env:PATH = "$cudaDir;$LlamaBinDir;$env:PATH"
         Write-Log "INFO" "CUDA backend: $env:GGML_BACKEND_PATH"
-    } elseif (-not $AllowCpu) {
+    }
+    elseif (-not $AllowCpu) {
         throw "No CUDA backend (cuda_v13\ggml-cuda.dll or cuda_v12\ggml-cuda.dll) found under $LlamaBinDir. Reinstall, or pass -AllowCpu for CPU-only mode."
     }
 
     # GPU baseline: log everything else using the GPU, and memory.used before launch
-    function Get-GpuMemUsed { try { [int](& nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits 2>$null | Select-Object -First 1) } catch { -1 } }
+    function Get-GpuMemUsed { try { [int](& nvidia-smi --query-gpu=memory.used --format=csv, noheader, nounits 2>$null | Select-Object -First 1) } catch { -1 } }
     $memBefore = Get-GpuMemUsed
-    $others = (& nvidia-smi --query-compute-apps=pid,process_name --format=csv,noheader 2>$null) -join "; "
+    $others = (& nvidia-smi --query-compute-apps=pid, process_name --format=csv, noheader 2>$null) -join "; "
     Write-Log "INFO" "GPU memory.used BEFORE launch: ${memBefore} MiB. Compute apps: $others"
     
     $runExe = if (Test-Path $LlamaExe) { $LlamaExe } elseif (Test-Path $LlamaCmd) { $LlamaCmd } else { "llama-server" }
@@ -331,7 +338,8 @@ try {
                 Write-Host ""
                 break
             }
-        } catch {}
+        }
+        catch {}
 
         Start-Sleep -Milliseconds 1000
     }
@@ -364,13 +372,15 @@ try {
     $totalLayers = if ($offMatch.Success) { [int]$offMatch.Groups[2].Value } else { 0 }
     if ($AllowCpu) {
         Write-Log "WARN" "CPU-only mode explicitly requested (-AllowCpu). Skipping GPU evidence check."
-    } elseif (-not $hasDevice -or $offloaded -eq 0 -or $offloaded -ne $totalLayers) {
+    }
+    elseif (-not $hasDevice -or $offloaded -eq 0 -or $offloaded -ne $totalLayers) {
         $excerpt = ($llamaText -split "`n" | Select-String -Pattern 'device|GPU|CUDA|offload|warning|error' | Select-Object -First 15 | ForEach-Object { $_.Line }) -join "`n"
         Write-Log "ERROR" "GPU OFFLOAD NOT CONFIRMED (cuda device detected: $hasDevice; layers offloaded: $offloaded/$totalLayers)."
         Write-Log "ERROR" "Log excerpt:`n$excerpt"
         Write-Log "ERROR" "Likely causes: (1) CUDA build older than 12.8 for an RTX 50-series card (use the cuda_v13 build); (2) ggml-cuda.dll / CUDA runtime DLLs missing or not found (GGML_BACKEND_PATH); (3) NVIDIA driver too old or not loaded. Pass -AllowCpu to run on CPU deliberately."
         throw "GPU offload not confirmed; refusing to continue on CPU silently."
-    } else {
+    }
+    else {
         Write-Log "PASS" "GPU evidence: CUDA device in use, offloaded $offloaded/$totalLayers layers to GPU."
         $memDuring = Get-GpuMemUsed
         Write-Log "INFO" "GPU memory.used DURING (model loaded): ${memDuring} MiB (before: ${memBefore} MiB)."
@@ -387,9 +397,9 @@ try {
     Write-Log "INFO" "Starting daemon on 127.0.0.1:$AgentServerPort..."
 
     $env:NIRMAN_SESSION_TOKEN = $sessionToken
-    $env:NIRMAN_SERVER_PORT   = "$AgentServerPort"
-    $env:NIRMAN_SERVER_HOST   = "127.0.0.1"
-    $env:NIRMAN_MODEL_URL     = "http://127.0.0.1:$LlamaPort/v1"
+    $env:NIRMAN_SERVER_PORT = "$AgentServerPort"
+    $env:NIRMAN_SERVER_HOST = "127.0.0.1"
+    $env:NIRMAN_MODEL_URL = "http://127.0.0.1:$LlamaPort/v1"
 
     "" | Set-Content $AgentLog -Force
 
@@ -413,14 +423,16 @@ try {
                 $serverReady = $true
                 break
             }
-        } catch {
+        }
+        catch {
             Start-Sleep -Milliseconds 500
         }
     }
 
     if ($serverReady) {
         Write-Log "PASS" "Agent server daemon verified healthy on ws://127.0.0.1:$AgentServerPort"
-    } else {
+    }
+    else {
         Write-Log "WARN" "Agent server readiness check timed out. Proceeding..."
     }
     $t3_agentReady = Get-Date
@@ -438,7 +450,6 @@ try {
     # 5. Open IDE & Timing Summary (Item 5)
     # -------------------------------------------------------------------------
     Write-Host "`n--- Launching NIRMAN Agentic Studio IDE ---" -ForegroundColor White
-    $IdeRealExe = Join-Path $InstallDir "ide\nirman.exe"
     $IdeCmd = Join-Path $InstallDir "nirman.cmd"
     $IdeExe = Join-Path $InstallDir "nirman.exe"
 
@@ -454,12 +465,12 @@ try {
         'console.log("Hello from NIRMAN Agentic Studio!");' | Set-Content -Path $sampleFile -Force
         Write-Log "PASS" "Sample task completed successfully! Created $sampleFile"
     }
+    if ($ExitAfterSeconds -gt 0) {
+        $ideArgs += "--exit-after=$ExitAfterSeconds"
+    }
 
-    # Ensure ELECTRON_RUN_AS_NODE is unset so Electron launches as GUI window
-    Remove-Item env:ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue
-
-    $ideRunner = if (Test-Path $IdeRealExe) { $IdeRealExe } elseif (Test-Path $IdeCmd) { $IdeCmd } else { "node" }
-    $runArgs = if (Test-Path $IdeRealExe) { $ideArgs } elseif (Test-Path $IdeCmd) { $ideArgs } else { @((Join-Path $InstallDir "main.js")) + $ideArgs }
+    $ideRunner = if (Test-Path $IdeCmd) { $IdeCmd } else { "node" }
+    $runArgs = if (Test-Path $IdeCmd) { $ideArgs } else { @((Join-Path $InstallDir "main.js")) + $ideArgs }
 
     Write-Log "INFO" "Opening IDE in workspace: $ProjectsDir"
     $ideProcess = Start-Process -FilePath $ideRunner -ArgumentList $runArgs -PassThru
@@ -475,44 +486,12 @@ try {
     Write-Log "INFO" "IDE active (PID $($ideProcess.Id)). Session running."
     Write-Log "INFO" "NIRMAN is running. When you close the IDE window, all background processes will stop automatically."
 
-    # Wait for the IDE to close (either via sample task, timer, process monitoring, or process exit)
-    if ($SampleTask) {
-        Start-Sleep -Seconds 3
-        Write-Log "INFO" "Sample task complete. Closing IDE..."
-        if ($ideProcess -and -not $ideProcess.HasExited) {
-            Stop-Process -Id $ideProcess.Id -Force -ErrorAction SilentlyContinue
-        }
-        Get-Process -Name "nirman" -ErrorAction SilentlyContinue | Where-Object {
-            $_.Path -and $_.Path.StartsWith($InstallDir, [System.StringComparison]::OrdinalIgnoreCase)
-        } | ForEach-Object {
-            Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue
-        }
-    } elseif ($ExitAfterSeconds -gt 0) {
-        Start-Sleep -Seconds $ExitAfterSeconds
-        Write-Log "INFO" "Exit timer elapsed (${ExitAfterSeconds}s). Closing IDE..."
-        if ($ideProcess -and -not $ideProcess.HasExited) {
-            Stop-Process -Id $ideProcess.Id -Force -ErrorAction SilentlyContinue
-        }
-        Get-Process -Name "nirman" -ErrorAction SilentlyContinue | Where-Object {
-            $_.Path -and $_.Path.StartsWith($InstallDir, [System.StringComparison]::OrdinalIgnoreCase)
-        } | ForEach-Object {
-            Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue
-        }
-    } elseif (Test-Path $IdeRealExe) {
-        Start-Sleep -Seconds 3
-        while ($true) {
-            $liveIde = Get-Process -Name "nirman" -ErrorAction SilentlyContinue | Where-Object {
-                $_.Path -and $_.Path.StartsWith($InstallDir, [System.StringComparison]::OrdinalIgnoreCase)
-            }
-            if (-not $liveIde) { break }
-            Start-Sleep -Seconds 1
-        }
-    } else {
-        $ideProcess.WaitForExit()
-    }
+    # Wait for the IDE to close
+    $ideProcess.WaitForExit()
     Write-Log "INFO" "IDE closed (ExitCode: $($ideProcess.ExitCode))."
 
-} finally {
+}
+finally {
     # -------------------------------------------------------------------------
     # 6. Clean Teardown of All Child Processes (Item 4)
     # -------------------------------------------------------------------------
@@ -526,7 +505,8 @@ try {
             Stop-Process -Id $serverProcess.Id -Force -ErrorAction Stop
             Write-Log "PASS" "Stopped agent server daemon (PID $($serverProcess.Id))."
         }
-    } catch {
+    }
+    catch {
         $teardownFailed = $true
         Write-Log "ERROR" "Teardown step failed: Stopping agent server - $_"
     }
@@ -537,22 +517,11 @@ try {
             Stop-Process -Id $llamaProcess.Id -Force -ErrorAction Stop
             Write-Log "PASS" "Stopped llama-server process (PID $($llamaProcess.Id))."
         }
-    } catch {
+    }
+    catch {
         $teardownFailed = $true
         Write-Log "ERROR" "Teardown step failed: Stopping llama-server - $_"
     }
-
-    # Step B.1: Stop IDE process tree if still running
-    try {
-        if ($ideProcess -and -not $ideProcess.HasExited) {
-            Stop-Process -Id $ideProcess.Id -Force -ErrorAction SilentlyContinue
-        }
-        Get-Process -Name "nirman" -ErrorAction SilentlyContinue | Where-Object {
-            $_.Path -and $_.Path.StartsWith($InstallDir, [System.StringComparison]::OrdinalIgnoreCase)
-        } | ForEach-Object {
-            Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue
-        }
-    } catch {}
 
     # Step C: Remove lock file
     try {
@@ -560,7 +529,8 @@ try {
             Remove-Item $LockFile -Force -ErrorAction Stop
             Write-Log "INFO" "Released application lock."
         }
-    } catch {
+    }
+    catch {
         $teardownFailed = $true
         Write-Log "ERROR" "Teardown step failed: Removing lock file - $_"
     }
@@ -570,7 +540,8 @@ try {
         if (Test-Path $PidsFile) {
             Remove-Item $PidsFile -Force -ErrorAction Stop
         }
-    } catch {
+    }
+    catch {
         $teardownFailed = $true
         Write-Log "ERROR" "Teardown step failed: Removing PIDs file - $_"
     }
@@ -597,18 +568,131 @@ try {
             }
             if ($releaseOk) {
                 Write-Log "PASS" "VRAM release verified: PID gone and memory.used within ${ToleranceMiB} MiB of baseline."
-            } else {
+            }
+            else {
                 $teardownFailed = $true
             }
         }
-    } catch {
+    }
+    catch {
         $teardownFailed = $true
         Write-Log "ERROR" "Teardown step failed: VRAM release check - $_"
     }
 
     if (-not $teardownFailed -and $releaseOk) {
         Write-Log "PASS" "Session concluded; all child processes stopped."
-    } else {
+    }
+    else {
         Write-Log "ERROR" "Session concluded WITH TEARDOWN FAILURES (see above)."
     }
+}
+if ($releaseOk) {
+    Write-Log "PASS" "VRAM release verified: PID gone and memory.used within ${ToleranceMiB} MiB of baseline."
+}
+else {
+    $teardownFailed = $true
+}
+}
+}
+catch {
+    $teardownFailed = $true
+    Write-Log "ERROR" "Teardown step failed: VRAM release check - $_"
+}
+
+if (-not $teardownFailed -and $releaseOk) {
+    Write-Log "PASS" "Session concluded; all child processes stopped."
+}
+else {
+    Write-Log "ERROR" "Session concluded WITH TEARDOWN FAILURES (see above)."
+}
+}
+if ($releaseOk) {
+    Write-Log "PASS" "VRAM release verified: PID gone and memory.used within ${ToleranceMiB} MiB of baseline."
+}
+else {
+    $teardownFailed = $true
+}
+}
+}
+catch {
+    $teardownFailed = $true
+    Write-Log "ERROR" "Teardown step failed: VRAM release check - $_"
+}
+
+if (-not $teardownFailed -and $releaseOk) {
+    Write-Log "PASS" "Session concluded; all child processes stopped."
+}
+else {
+    Write-Log "ERROR" "Session concluded WITH TEARDOWN FAILURES (see above)."
+}
+}
+if ($releaseOk) {
+    Write-Log "PASS" "VRAM release verified: PID gone and memory.used within ${ToleranceMiB} MiB of baseline."
+}
+else {
+    $teardownFailed = $true
+}
+}
+}
+catch {
+    $teardownFailed = $true
+    Write-Log "ERROR" "Teardown step failed: VRAM release check - $_"
+}
+
+if (-not $teardownFailed -and $releaseOk) {
+    Write-Log "PASS" "Session concluded; all child processes stopped."
+}
+else {
+    Write-Log "ERROR" "Session concluded WITH TEARDOWN FAILURES (see above)."
+}
+}
+Write-Log "ERROR" "Teardown step failed: Removing lock file - $_"
+}
+
+# Step D: Remove PIDs file
+try {
+    if (Test-Path $PidsFile) {
+        Remove-Item $PidsFile -Force -ErrorAction Stop
+    }
+} catch {
+    $teardownFailed = $true
+    Write-Log "ERROR" "Teardown step failed: Removing PIDs file - $_"
+}
+
+# -------------------------------------------------------------------------
+# 7. VRAM release check: llama-server PID gone AND memory.used back near baseline.
+# -------------------------------------------------------------------------
+$ToleranceMiB = 300
+Start-Sleep -Seconds 3
+Write-Host "`n--- Checking GPU VRAM release ---" -ForegroundColor White
+$releaseOk = $true
+try {
+    if ($llamaProcess) {
+        $pidAlive = [bool](Get-Process -Id $llamaProcess.Id -ErrorAction SilentlyContinue)
+        $memAfter = Get-GpuMemUsed
+        Write-Log "INFO" "VRAM raw numbers (MiB): before=$memBefore during=$memDuring after=$memAfter tolerance=$ToleranceMiB llama_pid_alive=$pidAlive"
+        if ($pidAlive) {
+            $releaseOk = $false
+            Write-Log "ERROR" "TEARDOWN STEP FAILED: llama-server PID $($llamaProcess.Id) is still alive."
+        }
+        if ($null -ne $memBefore -and $memBefore -ge 0 -and $memAfter -gt ($memBefore + $ToleranceMiB)) {
+            $releaseOk = $false
+            Write-Log "ERROR" "TEARDOWN STEP FAILED: memory.used after ($memAfter MiB) exceeds baseline ($memBefore MiB) + $ToleranceMiB MiB."
+        }
+        if ($releaseOk) {
+            Write-Log "PASS" "VRAM release verified: PID gone and memory.used within ${ToleranceMiB} MiB of baseline."
+        } else {
+            $teardownFailed = $true
+        }
+    }
+} catch {
+    $teardownFailed = $true
+    Write-Log "ERROR" "Teardown step failed: VRAM release check - $_"
+}
+
+if (-not $teardownFailed -and $releaseOk) {
+    Write-Log "PASS" "Session concluded; all child processes stopped."
+} else {
+    Write-Log "ERROR" "Session concluded WITH TEARDOWN FAILURES (see above)."
+}
 }

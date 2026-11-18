@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import path from 'node:path';
 import { NirmanClient, type RunRecord } from '@nirman/server/client';
 import type { AgentEvent } from '@nirman/artifacts';
@@ -64,6 +65,16 @@ export class ExtensionController {
    * Initializes client connection and event listener subscriptions.
    */
   public async activate(): Promise<void> {
+    if (this.config.serverToken === 'default-token') {
+      try {
+        const pidsRaw = fs.readFileSync('C:\\Tools\\nirman\\logs\\pids.json', 'utf-8');
+        const pids = JSON.parse(pidsRaw) as { token?: string };
+        if (pids.token && typeof (this.client as unknown as { setToken?: (t: string) => void }).setToken === 'function') {
+          this.config.serverToken = pids.token;
+          this.client.setToken(pids.token);
+        }
+      } catch {}
+    }
     await this.client.connect();
     this.isConnected = true;
 
