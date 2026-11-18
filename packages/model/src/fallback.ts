@@ -45,10 +45,13 @@ function extractJsonCandidate(text: string): string | null {
   // Try markdown fenced blocks first
   const fencedMatch = /```(?:json)?\s*([\s\S]*?)\s*```/i.exec(trimmed);
   if (fencedMatch && fencedMatch[1]) {
-    return fencedMatch[1].trim();
+    const candidate = fencedMatch[1].trim();
+    if (candidate.endsWith('}')) {
+      return candidate;
+    }
   }
 
-  // Look for outer braces containing "tool" or "name"
+  // Look for outer braces containing "tool" or "name" (handles nested ``` inside JSON string values)
   const firstBrace = trimmed.indexOf('{');
   const lastBrace = trimmed.lastIndexOf('}');
   if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {

@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { NirmanClient, type RunRecord } from '@nirman/server/client';
@@ -9,7 +10,7 @@ import { ArtifactsViewProvider } from './artifacts-view.js';
 import { NirmanStatusBar } from './status-bar.js';
 import { DiffReviewer } from './diff-viewer.js';
 import { AgentManagerViewProvider } from './agent-manager-view.js';
-import type { ExtensionConfig } from './types.js';
+import type { ChatMessageItem, ExtensionConfig } from './types.js';
 import type { IVSCodeAPI, IWebviewPanel } from './vscode-api.js';
 
 export interface ExtensionControllerOptions {
@@ -59,6 +60,170 @@ export class ExtensionController {
     this.statusBar.updateContextUsage(0, this.config.contextWindowLimit);
 
     this.bindDelegates();
+    this.loadWorkspaceChatHistory();
+  }
+
+  private getActiveWorkspaceRoot(): string {
+    const workspaceFolder = this.vscode.workspace.workspaceFolders?.[0];
+    return workspaceFolder ? workspaceFolder.uri.fsPath : process.cwd();
+  }
+
+  private getHistoryFilePaths(workspaceRoot: string): { localPath: string; globalPath: string } {
+    const normalized = path.resolve(workspaceRoot).toLowerCase();
+    const hash = crypto.createHash('sha1').update(normalized).digest('hex').slice(0, 16);
+    const folderBase = path.basename(workspaceRoot).replace(/[^a-zA-Z0-9_-]/g, '_') || 'workspace';
+    const localPath = path.join(workspaceRoot, '.agent', 'chat-history.json');
+    const globalPath = path.join(
+      'C:\\Tools\\nirman\\data\\chat-history',
+      `${folderBase}-${hash}.json`,
+    );
+    return { localPath, globalPath };
+  }
+
+  public loadWorkspaceChatHistory(): void {
+    if (!this.isRealIde()) return;
+    const workspaceRoot = this.getActiveWorkspaceRoot();
+    const folderName = path.basename(workspaceRoot) || 'Workspace';
+    const { localPath, globalPath } = this.getHistoryFilePaths(workspaceRoot);
+
+    let loaded: ChatMessageItem[] | null = null;
+    for (const candidate of [localPath, globalPath]) {
+      try {
+        if (fs.existsSync(candidate)) {
+          const raw = fs.readFileSync(candidate, 'utf-8');
+          const parsed = JSON.parse(raw) as unknown;
+          if (Array.isArray(parsed)) {
+            loaded = parsed as ChatMessageItem[];
+            break;
+          }
+        }
+      } catch {}
+    }
+
+    this.chatView.setMessages(loaded ?? [], folderName);
+  }
+
+  private saveWorkspaceChatHistory(): void {
+    if (!this.isRealIde()) return;
+    const workspaceRoot = this.getActiveWorkspaceRoot();
+    const { localPath, globalPath } = this.getHistoryFilePaths(workspaceRoot);
+    const serialized = JSON.stringify(this.chatView.getMessages(), null, 2);
+
+    try {
+      fs.mkdirSync(path.dirname(localPath), { recursive: true });
+      fs.writeFileSync(localPath, serialized, 'utf-8');
+    } catch {}
+    try {
+      fs.mkdirSync(path.dirname(globalPath), { recursive: true });
+      fs.writeFileSync(globalPath, serialized, 'utf-8');
+    } catch {}
+  }
+
+  public clearWorkspaceChatHistory(): void {
+    this.chatView.clearMessages();
+    if (!this.isRealIde()) return;
+    const workspaceRoot = this.getActiveWorkspaceRoot();
+    const { localPath, globalPath } = this.getHistoryFilePaths(workspaceRoot);
+    try {
+      if (fs.existsSync(localPath)) fs.unlinkSync(localPath);
+    } catch {}
+    try {
+      if (fs.existsSync(globalPath)) fs.unlinkSync(globalPath);
+    } catch {}
+  }
+
+  private appendChat(sender: 'user' | 'assistant' | 'system', content: string): void {
+    this.chatView.appendMessage(sender, content);
+    this.saveWorkspaceChatHistory();
+  }
+
+  private isConversationalQuestion(prompt: string): boolean {
+    if (!this.isRealIde()) return false;
+    const trimmed = prompt.trim();
+    const lower = trimmed.toLowerCase();
+    if (/^(hi|hello|hey|who are you|what can you do)\b/i.test(lower)) {
+      return true;
+    }
+    const hasBuildIntent =
+      /\b(build|create|make|implement|write|generate|add|modify|edit|update|refactor|fix|delete|remove|setup|scaffold|develop)\b/i.test(
+        lower,
+      );
+    const isQuestion =
+      trimmed.endsWith('?') ||
+      /^(how|what|why|where|when|can you explain|explain|tell me|show me how)\b/i.test(lower);
+    return isQuestion && !hasBuildIntent;
+  }
+
+  private async answerConversationally(prompt: string): Promise<void> {
+    const workspaceRoot = this.getActiveWorkspaceRoot();
+    this.appendChat('user', prompt);
+
+    let filesSummary = '';
+    try {
+      const topFiles = fs
+        .readdirSync(workspaceRoot)
+        .filter((n) => n !== '.git' && n !== '.agent' && n !== 'node_modules')
+        .slice(0, 25);
+      filesSummary = topFiles.join(', ');
+    } catch {}
+
+    let specSnippet = '';
+    try {
+      const specPath = path.join(workspaceRoot, 'SPEC.md');
+      if (fs.existsSync(specPath)) {
+        specSnippet = fs.readFileSync(specPath, 'utf-8').slice(0, 1500);
+      }
+    } catch {}
+
+    const recentMsgs = this.chatView
+      .getMessages()
+      .filter((m) => m.sender === 'user' || m.sender === 'assistant')
+      .slice(-6)
+      .map((m) => ({
+        role: m.sender,
+        content: m.content,
+      }));
+
+    const modelBaseUrl = (process.env['NIRMAN_MODEL_URL'] ?? 'http://127.0.0.1:8080/v1').replace(
+      /\/+$/,
+      '',
+    );
+
+    const response = await fetch(`${modelBaseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: this.config.model,
+        temperature: 0.2,
+        messages: [
+          {
+            role: 'system',
+            content: [
+              'You are NIRMAN, an intelligent AI software engineering assistant inside NIRMAN Agentic Studio (similar to Antigravity).',
+              `Active workspace folder: ${workspaceRoot}`,
+              filesSummary ? `Files in workspace: ${filesSummary}` : '',
+              specSnippet ? `Workspace SPEC.md:\n${specSnippet}` : '',
+              'Answer the user concisely, clearly, and helpfully using GitHub-flavored Markdown. Give exact commands or file paths when relevant.',
+            ]
+              .filter(Boolean)
+              .join('\n'),
+          },
+          ...recentMsgs,
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Local model server returned HTTP ${response.status}`);
+    }
+
+    const data = (await response.json()) as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+    const reply = data.choices?.[0]?.message?.content?.trim();
+    if (reply) {
+      this.appendChat('assistant', reply);
+    }
   }
 
   /**
@@ -88,18 +253,50 @@ export class ExtensionController {
     this.chatView.appendMessage('system', `Connected to NIRMAN Daemon at ${this.config.serverUrl}`);
   }
 
+  private stripCodeFromPlan(planMarkdown: string): string {
+    const withoutCodeFences = planMarkdown.replace(
+      /```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g,
+      (fullMatch, lang: string, body: string) => {
+        const normalizedLang = (lang || '').trim().toLowerCase();
+        const isTreeBlock =
+          !normalizedLang &&
+          (body.includes('├──') ||
+            body.includes('└──') ||
+            body.includes('|--') ||
+            /^[\s\w./\\-]+$/m.test(body.trim()));
+        const hasCodeKeywords =
+          /\b(def |class |function |import |from |return |const |let |var |if\s*\(|for\s*\(|while\s*\(|console\.log|print\()/i.test(
+            body,
+          );
+        if (isTreeBlock && !hasCodeKeywords) {
+          return fullMatch;
+        }
+        return '';
+      },
+    );
+
+    return withoutCodeFences
+      .replace(/^\s*[-*]?\s*\*\*(?:Content|Code|Source Code|Implementation)\*\*\s*:\s*$/gim, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  }
+
   private bindDelegates(): void {
     // Chat view delegate
     this.chatView.setDelegate({
       onDescribeProject: async (prompt, skipPlanning) => {
         try {
+          if (this.isConversationalQuestion(prompt)) {
+            await this.answerConversationally(prompt);
+            return;
+          }
           if (!this.isConnected) {
             await this.activate();
           }
           await this.startRun(prompt, skipPlanning);
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
-          this.chatView.appendMessage('system', `⚠️ Failed to start run: ${msg}`);
+          this.appendChat('system', `⚠️ Failed to process request: ${msg}`);
         }
       },
       onPauseRun: async (runId) => {
@@ -115,6 +312,21 @@ export class ExtensionController {
         if (this.activeRun) {
           await this.approvePlan(this.activeRun.runId);
         }
+      },
+      onReviseActivePlan: async (feedback) => {
+        if (this.activeRun) {
+          await this.commentPlan(this.activeRun.runId, feedback);
+        }
+      },
+      onOpenFile: async (filePath) => {
+        const baseDir = this.activeRun?.repoRoot || this.getActiveWorkspaceRoot();
+        const fullPath = path.isAbsolute(filePath) ? filePath : path.join(baseDir, filePath);
+        try {
+          await this.vscode.commands.executeCommand('vscode.open', this.vscode.Uri.file(fullPath));
+        } catch {}
+      },
+      onClearChat: async () => {
+        this.clearWorkspaceChatHistory();
       },
     });
 
@@ -262,8 +474,13 @@ export class ExtensionController {
     const workspaceRoot =
       customWorkspaceRoot || (workspaceFolder ? workspaceFolder.uri.fsPath : process.cwd());
 
-    this.chatView.appendMessage('user', task);
-    this.chatView.appendMessage('system', 'Starting run...');
+    this.appendChat('user', task);
+    this.appendChat(
+      'system',
+      skipPlanning
+        ? '⚡ Starting direct execution...'
+        : '🧠 Analyzing workspace & drafting implementation plan...',
+    );
 
     const result = await this.client.startRun({
       task,
@@ -287,10 +504,6 @@ export class ExtensionController {
     };
 
     this.statusBar.setActiveRun(result.runId);
-    this.chatView.appendMessage(
-      'system',
-      `Run ${result.runId} started in isolated worktree: ${result.worktreePath}`,
-    );
 
     await this.refreshRuns();
     return result.runId;
@@ -301,7 +514,7 @@ export class ExtensionController {
    */
   public async approvePlan(runId: string): Promise<void> {
     await this.client.approvePlan(runId);
-    this.chatView.appendMessage('system', '✔ Plan approved. Beginning implementation phase.');
+    this.appendChat('system', '✔ Plan approved. Beginning implementation phase.');
   }
 
   /**
@@ -309,8 +522,8 @@ export class ExtensionController {
    */
   public async commentPlan(runId: string, feedback: string): Promise<void> {
     await this.client.comment(runId, feedback);
-    this.chatView.appendMessage('user', `Feedback: ${feedback}`);
-    this.chatView.appendMessage('system', 'Requested plan revision with feedback.');
+    this.appendChat('user', `Feedback: ${feedback}`);
+    this.appendChat('system', '🔄 Revising implementation plan based on your feedback...');
   }
 
   /**
@@ -442,10 +655,10 @@ export class ExtensionController {
         const trimmed = event.content.trim();
         const isRawToolJson =
           (trimmed.startsWith('```json') || trimmed.startsWith('{')) &&
-          trimmed.includes('"name"') &&
+          (trimmed.includes('"name"') || trimmed.includes('"tool"')) &&
           trimmed.includes('"arguments"');
         if (!isRawToolJson) {
-          this.chatView.appendMessage('assistant', event.content);
+          this.appendChat('assistant', event.content);
         }
         // Estimate token count update
         this.statusBar.updateContextUsage(
@@ -459,15 +672,17 @@ export class ExtensionController {
         const pathArg =
           event.arguments && typeof event.arguments['path'] === 'string'
             ? ` (${event.arguments['path']})`
-            : '';
-        this.chatView.appendMessage('system', `🛠 Calling tool "${event.tool}"${pathArg}...`);
+            : event.arguments && typeof event.arguments['command'] === 'string'
+              ? ` (${event.arguments['command']})`
+              : '';
+        this.appendChat('system', `🛠 Calling tool "${event.tool}"${pathArg}`);
         break;
       }
 
       case 'tool_result':
         if (event.tool === 'write_file' || event.tool === 'edit_file') {
           this.syncWorktreeToRepo();
-          this.chatView.appendMessage(
+          this.appendChat(
             'system',
             `📄 File updated in workspace (Click "Review Diff" to inspect)`,
           );
@@ -502,9 +717,12 @@ export class ExtensionController {
           } catch {}
         }
 
+        // Strip any raw source code blocks so the implementation plan explains workflow & architecture
+        const cleanPlanMarkdown = this.stripCodeFromPlan(planMarkdown);
+
         this.planView.setPlanData({
           runId,
-          planMarkdown,
+          planMarkdown: cleanPlanMarkdown,
           specMarkdown,
           tasks: event.tasks,
           isWaitingApproval: true,
@@ -512,30 +730,29 @@ export class ExtensionController {
         this.tasksView.setTasks(runId, event.tasks);
 
         const taskListText = event.tasks
-          .map((t, idx) => `${idx + 1}. [${t.id}] ${t.title}`)
-          .join('\n');
+          .map(
+            (t, idx) =>
+              `**Step ${idx + 1}: ${t.title}**${t.description ? `\n${t.description}` : ''}`,
+          )
+          .join('\n\n');
 
         const fullPlanChatMsg = [
-          '📋 Execution plan created. Please review the implementation plan below and click Approve:',
+          '📋 Execution plan created. Here is how I will work on your project:',
           '',
-          '=== TASKS ===',
-          taskListText || '(No tasks listed)',
+          '### Execution Workflow',
+          taskListText || '(No steps listed)',
           '',
-          '=== IMPLEMENTATION PLAN (plan.md) ===',
-          planMarkdown,
+          '### Architectural Approach & Strategy',
+          cleanPlanMarkdown,
         ].join('\n');
 
-        this.chatView.appendMessage('system', fullPlanChatMsg);
+        this.appendChat('system', fullPlanChatMsg);
 
         if (this.isRealIde() && this.activeRun) {
           try {
             const repoPlanPath = path.join(this.activeRun.repoRoot, 'PLAN.md');
-            fs.writeFileSync(repoPlanPath, planMarkdown, 'utf-8');
+            fs.writeFileSync(repoPlanPath, cleanPlanMarkdown, 'utf-8');
             this.syncWorktreeToRepo();
-            void this.vscode.commands.executeCommand(
-              'vscode.open',
-              this.vscode.Uri.file(repoPlanPath),
-            );
           } catch {}
         }
         break;
@@ -572,11 +789,11 @@ export class ExtensionController {
             }
           } catch {}
         }
-        this.chatView.appendMessage(
-          'system',
+        this.appendChat(
+          'assistant',
           walkthroughText
-            ? `🏁 Run finished with status: ${event.status.toUpperCase()}\n\n${walkthroughText}`
-            : `🏁 Run finished with status: ${event.status.toUpperCase()}`,
+            ? `✅ **Task Complete (${event.status.toUpperCase()})**\n\nAll files have been written to your workspace folder.\n\n${walkthroughText}`
+            : `✅ **Task Complete (${event.status.toUpperCase()})**`,
         );
         this.refreshArtifacts(runId);
         break;

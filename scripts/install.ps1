@@ -397,27 +397,53 @@ if (-not $modelValid) {
 }
 
 # -----------------------------------------------------------------------------
-# 6. Create Desktop Shortcut with Icon
+# 6. Register as Windows System App (Desktop, Start Menu & Installed Apps)
 # -----------------------------------------------------------------------------
-Write-Host "`n--- Creating Desktop Shortcut ---" -ForegroundColor White
+Write-Host "`n--- Registering NIRMAN Agentic Studio as Windows App ---" -ForegroundColor White
 $DesktopPath = [Environment]::GetFolderPath('Desktop')
 $ShortcutPath = Join-Path $DesktopPath "NIRMAN Agentic Studio.lnk"
+$StartMenuDir = [Environment]::GetFolderPath('Programs')
+$StartMenuShortcutPath = Join-Path $StartMenuDir "NIRMAN Agentic Studio.lnk"
+$UninstallScriptSrc = Join-Path $PSScriptRoot "uninstall.ps1"
+if (Test-Path $UninstallScriptSrc) {
+    Copy-Item -Path $UninstallScriptSrc -Destination (Join-Path $InstallDir "uninstall.ps1") -Force
+}
 
 try {
     $wscript = New-Object -ComObject WScript.Shell
-    $shortcut = $wscript.CreateShortcut($ShortcutPath)
-    $shortcut.TargetPath = "powershell.exe"
-    $shortcut.Arguments = "-ExecutionPolicy Bypass -NoLogo -WindowStyle Normal -File `"$InstallDir\start.ps1`""
-    $shortcut.WorkingDirectory = $InstallDir
-    $shortcut.IconLocation = "$InstallDir\resources\nirman.ico,0"
-    $shortcut.Description = "NIRMAN Agentic Studio - AI-native Software Development Environment"
-    $shortcut.Save()
+    foreach ($lnkPath in @($ShortcutPath, $StartMenuShortcutPath)) {
+        $shortcut = $wscript.CreateShortcut($lnkPath)
+        $shortcut.TargetPath = "powershell.exe"
+        $shortcut.Arguments = "-ExecutionPolicy Bypass -NoLogo -WindowStyle Hidden -File `"$InstallDir\start.ps1`""
+        $shortcut.WorkingDirectory = $InstallDir
+        $shortcut.IconLocation = "$InstallDir\resources\nirman.ico,0"
+        $shortcut.Description = "NIRMAN Agentic Studio - AI-native Software Development Environment"
+        $shortcut.Save()
+    }
 
-    Write-Success "Desktop shortcut created: $ShortcutPath"
-    Write-Info "Shortcut Target: powershell.exe -File `"$InstallDir\start.ps1`""
-    Write-Info "Shortcut Icon:   $InstallDir\resources\nirman.ico"
+    Write-Success "Desktop shortcut created:    $ShortcutPath"
+    Write-Success "Start Menu app registered:   $StartMenuShortcutPath"
+    Write-Info "Shortcut Icon:               $InstallDir\resources\nirman.ico"
 } catch {
-    Write-Warn "Could not create desktop shortcut via COM: $_"
+    Write-Warn "Could not create app shortcuts via COM: $_"
+}
+
+try {
+    $regPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\NIRMAN"
+    if (-not (Test-Path $regPath)) {
+        New-Item -Path $regPath -Force | Out-Null
+    }
+    Set-ItemProperty -Path $regPath -Name "DisplayName" -Value "NIRMAN Agentic Studio"
+    Set-ItemProperty -Path $regPath -Name "DisplayVersion" -Value "1.0.0"
+    Set-ItemProperty -Path $regPath -Name "Publisher" -Value "NIRMAN"
+    Set-ItemProperty -Path $regPath -Name "DisplayIcon" -Value "$InstallDir\resources\nirman.ico"
+    Set-ItemProperty -Path $regPath -Name "InstallLocation" -Value $InstallDir
+    Set-ItemProperty -Path $regPath -Name "UninstallString" -Value "powershell.exe -ExecutionPolicy Bypass -File `"$InstallDir\uninstall.ps1`""
+    Set-ItemProperty -Path $regPath -Name "NoModify" -Value 1 -Type DWord
+    Set-ItemProperty -Path $regPath -Name "NoRepair" -Value 1 -Type DWord
+    Write-Success "Registered in Windows Installed Apps (Settings -> Apps -> Installed Apps)"
+} catch {
+    Write-Warn "Could not register Windows Uninstall registry key: $_"
 }
 
 Write-Host "`n==========================================================" -ForegroundColor Green

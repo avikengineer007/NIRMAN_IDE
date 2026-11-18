@@ -107,6 +107,38 @@ export function parsePlanTasks(planMarkdown: string): TaskItem[] {
 }
 
 /**
+ * Strips raw source code blocks from planMarkdown while keeping folder-tree blocks intact,
+ * ensuring the implementation plan explains HOW the agent will work rather than dumping code.
+ */
+export function stripSourceCodeFromPlan(planMarkdown: string): string {
+  const withoutCodeFences = planMarkdown.replace(
+    /```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g,
+    (fullMatch, lang: string, body: string) => {
+      const normalizedLang = (lang || '').trim().toLowerCase();
+      const isTreeBlock =
+        !normalizedLang &&
+        (body.includes('├──') ||
+          body.includes('└──') ||
+          body.includes('|--') ||
+          /^[\s\w./\\-]+$/m.test(body.trim()));
+      const hasCodeKeywords =
+        /\b(def |class |function |import |from |return |const |let |var |if\s*\(|for\s*\(|while\s*\(|console\.log|print\()/i.test(
+          body,
+        );
+      if (isTreeBlock && !hasCodeKeywords) {
+        return fullMatch;
+      }
+      return '';
+    },
+  );
+
+  return withoutCodeFences
+    .replace(/^\s*[-*]?\s*\*\*(?:Content|Code|Source Code|Implementation)\*\*\s*:\s*$/gim, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+/**
  * Splits model response containing PLAN.MD and SPEC.MD sections.
  */
 function splitPlanAndSpec(
@@ -236,15 +268,17 @@ Important Requirements:
 1. The workspace directory is the root of the project. Do NOT create an extra enclosing folder for the project; all files must be placed directly in the workspace root or standard subdirectories (e.g., src/).
 2. Keep the plan concise and high-level: 1 to 3 logical steps (e.g., Step 1: Implement application code and dependencies; Step 2: Verification and test cases). Do NOT create 10+ microscopic steps for individual terminal commands.
 3. Under SPEC.md "Build / Test / Run Commands", list the exact commands. If the user provided a test command in the project request, use it directly (e.g. \`- Test: node wordcount.js sample.txt\`). If no build step is needed, write \`- Build: None\`.
+4. STRICT RULE — DO NOT SHOW CODE IN PLAN.MD: Never include source code, function bodies, or code blocks inside plan.md. Instead, explain clearly HOW the agent will work on the project: the architectural approach, how each module/file will be structured and why, how components interact, and how the agent will verify and test the project.
 
 Create two comprehensive artifacts:
 1. plan.md:
+   - Approach & Strategy: High-level explanation of how the agent will design and build the project.
    - Stack: Selected frameworks, libraries, runtime, and versions.
-   - Folder Structure: Directory layout of the project.
+   - Folder Structure: Directory layout of the project (without file source code).
    - Ordered Steps: Each step MUST have heading:
      ### Step <number>: <Title>
-     <Brief description of what files will be created/tested>
-   - Test Strategy: How the project will be tested and verified.
+     <Clear prose explanation of how the agent will execute this step, which files it will create or modify, their responsibilities, and how they fit together — NO SOURCE CODE BLOCKS>
+   - Verification Strategy: How the agent will test and validate the result.
 
 2. SPEC.md:
    - Overview & Goals
@@ -270,7 +304,9 @@ Separate the two files using the exact markers:
     ]);
 
     const responseText = response.message.content ?? response.rawText;
-    const { planMarkdown, specMarkdown } = splitPlanAndSpec(responseText, task);
+    const rawSplit = splitPlanAndSpec(responseText, task);
+    const planMarkdown = stripSourceCodeFromPlan(rawSplit.planMarkdown);
+    const specMarkdown = rawSplit.specMarkdown;
     const tasks = parsePlanTasks(planMarkdown);
 
     return {
@@ -326,7 +362,9 @@ Output format:
     ]);
 
     const responseText = response.message.content ?? response.rawText;
-    const { planMarkdown, specMarkdown } = splitPlanAndSpec(responseText, task);
+    const rawSplit = splitPlanAndSpec(responseText, task);
+    const planMarkdown = stripSourceCodeFromPlan(rawSplit.planMarkdown);
+    const specMarkdown = rawSplit.specMarkdown;
     const tasks = parsePlanTasks(planMarkdown);
 
     return {
