@@ -36,13 +36,14 @@ export function extractVerificationCommands(
     commands.push(specTestCmd);
   }
 
-  // Look for build / test commands in SPEC.md (fallback line scan)
+  // Look for build / test commands in SPEC.md (fallback line scan with word boundary and required separator)
   const testRegex =
-    /(?:^|\n)\s*[-*]?\s*\*{0,2}(?:Test|Build|Verify)\s*[:=-]?\*{0,2}\s*[:=-]?\s*`?([^\n`*]+)`?/gi;
+    /(?:^|\n)\s*[-*]?\s*\*{0,2}(?:Test|Build|Verify)(?:\s+Command)?\b(?:\s*[:=-]\*{0,2}|\*{0,2}\s*[:=-])\s*`?([^\n`*]+)`?/gi;
   for (const match of specMarkdown.matchAll(testRegex)) {
     const cmd = match[1]?.trim();
     if (
       cmd &&
+      !cmd.endsWith(':') &&
       !cmd.toLowerCase().startsWith('none') &&
       !cmd.toLowerCase().startsWith('n/a') &&
       !commands.includes(cmd)

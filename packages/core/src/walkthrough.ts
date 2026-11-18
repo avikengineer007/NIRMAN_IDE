@@ -20,8 +20,9 @@ export interface WalkthroughOptions {
  */
 export function isRunnableCommandString(candidate?: string): candidate is string {
   if (!candidate) return false;
-  const trimmed = candidate.trim();
+  const trimmed = candidate.replace(/^\s*[-*]\s+/, '').trim();
   if (!trimmed) return false;
+  if (trimmed.endsWith(':')) return false;
   const lower = trimmed.toLowerCase();
   if (
     lower === 'none' ||
@@ -42,6 +43,7 @@ export function isRunnableCommandString(candidate?: string): candidate is string
  * Handles:
  *  - `- **Run:** \`python src/main.py\`` (colon inside bold)
  *  - `- **Run**: \`python src/main.py\`` (colon outside bold)
+ *  - `- **Run Command:** \`python src/main.py\``
  *  - `- Run: python src/main.py`
  *  - Multi-line fenced code blocks immediately under `- **Run:**` or `### Run`
  *  - Multi-line sub-bullets under `- **Run:**`
@@ -52,9 +54,11 @@ export function extractSpecCommand(
 ): string | undefined {
   if (!specMarkdown) return undefined;
 
+  const labelCore = `(?:${labelPattern})(?:\\s+Command)?\\b(?:\\s*[:=-]\\*{0,2}|\\*{0,2}\\s*[:=-])`;
+
   // 1. Multi-line fenced code block right after label (e.g. "- **Test:**\n ```bash\n cmd\n ```")
   const codeBlockRegex = new RegExp(
-    `(?:^|\\n)\\s*(?:[-*]|#{1,4})?\\s*\\*{0,2}(?:${labelPattern})(?:\\s+Command)?\\s*[:=-]?\\*{0,2}\\s*[:=-]?\\s*\\n\\s*\`\`\`(?:[a-zA-Z0-9_-]*)\\s*\\n([^\\n\`]+)\\n\\s*\`\`\``,
+    `(?:^|\\n)\\s*(?:[-*]|#{1,4})?\\s*\\*{0,2}${labelCore}\\s*\\n\\s*\`\`\`(?:[a-zA-Z0-9_-]*)\\s*\\n([^\\n\`]+)\\n\\s*\`\`\``,
     'i',
   );
   const codeBlockMatch = specMarkdown.match(codeBlockRegex);
@@ -62,9 +66,9 @@ export function extractSpecCommand(
     return codeBlockMatch[1].trim();
   }
 
-  // 2. Inline on the same line (handles colon inside or outside **bold**)
+  // 2. Inline on the same line (handles colon inside or outside **bold**; horizontal whitespace only)
   const inlineRegex = new RegExp(
-    `(?:^|\\n)\\s*[-*]?\\s*\\*{0,2}(?:${labelPattern})(?:\\s+Command)?\\s*[:=-]?\\*{0,2}\\s*[:=-]?\\s*\`?([^\\n\`*]+)\`?`,
+    `(?:^|\\n)[^\\S\\r\\n]*[-*]?[^\\S\\r\\n]*\\*{0,2}${labelCore}[^\\S\\r\\n]*\`?([^\\n\`*]+)\`?`,
     'i',
   );
   const inlineMatch = specMarkdown.match(inlineRegex);
@@ -74,7 +78,7 @@ export function extractSpecCommand(
 
   // 3. Sub-bullet on the next line (e.g. "- **Run:**\n  - `python src/main.py`")
   const subBulletRegex = new RegExp(
-    `(?:^|\\n)\\s*[-*]?\\s*\\*{0,2}(?:${labelPattern})(?:\\s+Command)?\\s*[:=-]?\\*{0,2}\\s*[:=-]?\\s*\\n\\s*[-*]\\s*\`?([^\\n\`]+)\`?`,
+    `(?:^|\\n)\\s*[-*]?\\s*\\*{0,2}${labelCore}\\s*\\n\\s*[-*]\\s*\`?([^\\n\`]+)\`?`,
     'i',
   );
   const subBulletMatch = specMarkdown.match(subBulletRegex);

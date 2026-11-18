@@ -9,6 +9,7 @@ import {
   resolveWalkthroughCommands,
   verifyWalkthroughCommands,
 } from './walkthrough.js';
+import { extractVerificationCommands } from './verifier.js';
 import { getLanguageGuidanceForTask, LANGUAGE_RECIPES } from './templates.js';
 
 describe('generateWalkthrough', () => {
@@ -129,5 +130,17 @@ describe('generateWalkthrough', () => {
     expect(resolveWalkthroughCommands(undefined, ['main.rb']).runCommand).toBe('ruby main.rb');
     expect(resolveWalkthroughCommands(undefined, ['main.php']).runCommand).toBe('php main.php');
     expect(resolveWalkthroughCommands(undefined, ['src/calculator.ts']).runCommand).toBe('npx tsx src/calculator.ts');
+
+    const realSpec = `
+- **Testing Framework:** Python's built-in \`unittest\` module
+- **Build Command:** None
+- **Test Command:** \`python -m unittest discover -s src/tests -t .\`
+- **Run Command:** \`python src/calculator.py\`
+`;
+    const cmds = extractVerificationCommands(realSpec);
+    expect(cmds).toEqual(['python -m unittest discover -s src/tests -t .']);
+    expect(resolveWalkthroughCommands(realSpec, ['src/calculator.py']).runCommand).toBe(
+      'python src/calculator.py',
+    );
   });
 });
