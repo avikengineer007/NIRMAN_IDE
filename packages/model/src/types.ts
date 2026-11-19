@@ -54,7 +54,20 @@ export interface ToolDefinition {
 }
 
 /** Tool execution mode */
-export type ToolCallingMode = 'native' | 'fallback';
+export type ToolCallingMode = 'native' | 'fallback' | 'constrained';
+
+/** OpenAI / llama.cpp response_format option for constrained decoding */
+export type ResponseFormatOption =
+  | { type: 'text' }
+  | { type: 'json_object'; schema?: Record<string, unknown> }
+  | {
+      type: 'json_schema';
+      json_schema: {
+        name: string;
+        strict?: boolean;
+        schema: Record<string, unknown>;
+      };
+    };
 
 /** Configuration for the model client */
 export interface ModelConfig {
@@ -124,6 +137,8 @@ export interface ChatOptions {
   temperature?: number;
   timeoutMs?: number;
   signal?: AbortSignal;
+  responseFormat?: ResponseFormatOption;
+  grammar?: string;
 }
 
 /** Public model client interface */

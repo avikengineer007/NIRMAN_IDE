@@ -65,7 +65,7 @@ export interface TaskExecutionResult {
 export interface ModelBenchmarkSummary {
   modelName: string;
   provider: string;
-  toolMode: 'native' | 'fallback';
+  toolMode: 'native' | 'fallback' | 'constrained';
   totalTasks: number;
   passedTasks: number;
   passRatePercent: number;

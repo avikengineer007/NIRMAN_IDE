@@ -17,7 +17,9 @@ function resolveSessionToken(): string {
     const pidsRaw = fs.readFileSync('C:\\Tools\\nirman\\logs\\pids.json', 'utf-8');
     const pids = JSON.parse(pidsRaw) as { token?: string };
     if (pids.token) return pids.token;
-  } catch {}
+  } catch (err) {
+    console.warn('[NIRMAN] Failed to read session token from pids.json:', err);
+  }
   return 'default-token';
 }
 
@@ -41,7 +43,9 @@ async function ensureBackendServicesRunning(): Promise<void> {
 
   try {
     fs.mkdirSync(logsDir, { recursive: true });
-  } catch {}
+  } catch (err) {
+    console.warn('[NIRMAN] Could not create logs directory:', err);
+  }
 
   // 1. Check / start llama-server on port 8080
   const llamaAlive = await isHttpAlive('http://127.0.0.1:8080/health');
@@ -112,7 +116,9 @@ async function ensureBackendServicesRunning(): Promise<void> {
           ),
           'utf-8',
         );
-      } catch {}
+      } catch (err) {
+        console.warn('[NIRMAN] Failed to persist pids.json:', err);
+      }
 
       // Wait briefly for daemon HTTP readiness
       for (let i = 0; i < 12; i++) {
@@ -170,7 +176,9 @@ export async function activate(
           webviewOptions: { retainContextWhenHidden: true },
         }),
       );
-    } catch {}
+    } catch (err) {
+      console.warn('[NIRMAN] Failed to register one or more webview providers:', err);
+    }
   }
 
   // Listen for workspace folder switches to load that folder's chat history
@@ -274,13 +282,17 @@ export function deactivate(): void {
   if (spawnedDaemon) {
     try {
       spawnedDaemon.kill();
-    } catch {}
+    } catch (err) {
+      console.warn('[NIRMAN] Failed to register one or more webview providers:', err);
+    }
     spawnedDaemon = null;
   }
   if (spawnedLlama) {
     try {
       spawnedLlama.kill();
-    } catch {}
+    } catch (err) {
+      console.warn('[NIRMAN] Failed to register one or more webview providers:', err);
+    }
     spawnedLlama = null;
   }
 }

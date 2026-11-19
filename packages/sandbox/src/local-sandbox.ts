@@ -4,12 +4,16 @@ import path from 'node:path';
 import type { CommandOptions, CommandResult, DirEntry, Sandbox, SandboxConfig } from './types.js';
 import { resolveSafePath, toWorkspaceRelative } from './path-safety.js';
 
+let localSandboxWarningShown = false;
+
 /**
- * Host-isolated sandbox implementation.
- * Confines file operations and child process execution strictly to workspaceRoot.
+ * Workspace-scoped local execution runner (NOT isolated).
+ * Confines file path resolution to workspaceRoot, but executes child commands directly
+ * on the host with host user privileges (networkMode, cpuLimit, and memoryLimit are NOT enforced).
  */
 export class LocalSandbox implements Sandbox {
   readonly config: SandboxConfig;
+  readonly isolationMode = 'workspace-scoped (not isolated)' as const;
 
   constructor(config: SandboxConfig) {
     this.config = {
@@ -21,6 +25,14 @@ export class LocalSandbox implements Sandbox {
       allowNetwork: config.allowNetwork ?? false,
       image: config.image ?? 'node:20-bookworm-slim',
     };
+
+    if (!localSandboxWarningShown && process.env['NIRMAN_SUPPRESS_SANDBOX_WARNING'] !== '1') {
+      localSandboxWarningShown = true;
+      console.warn(
+        '[NIRMAN SANDBOX WARNING] LocalSandbox is workspace-scoped, NOT isolated. ' +
+          'Commands run directly on the host without network, CPU, or memory isolation.',
+      );
+    }
   }
 
   resolveSafePath(relativePath: string): string {

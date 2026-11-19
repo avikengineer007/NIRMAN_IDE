@@ -25,6 +25,7 @@ export class ChatViewProvider {
   private delegate?: ChatViewDelegate | undefined;
   private messages: ChatMessageItem[] = [];
   private activeFolderName = 'Workspace';
+  private messageSeq = 0;
 
   public setDelegate(delegate: ChatViewDelegate): void {
     this.delegate = delegate;
@@ -122,8 +123,9 @@ export class ChatViewProvider {
   }
 
   public appendMessage(sender: 'user' | 'assistant' | 'system', content: string): ChatMessageItem {
+    this.messageSeq += 1;
     const item: ChatMessageItem = {
-      id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      id: `msg-${Date.now()}-${this.messageSeq}`,
       sender,
       content,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),

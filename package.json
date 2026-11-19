@@ -13,6 +13,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "check:hygiene": "vitest run scripts/code-hygiene.test.ts scripts/path-hygiene.test.ts",
     "test": "vitest run"
   },
   "devDependencies": {

@@ -142,8 +142,36 @@ export function resolveWalkthroughCommands(
   createdFiles?: readonly string[],
 ): { runCommand: string; testCommand: string } {
   const projectFiles = filterProjectFiles(createdFiles);
-  const rawRunCmd = extractSpecCommand(specMarkdown, 'Run|Start');
-  const rawTestCmd = extractSpecCommand(specMarkdown, 'Test|Verify');
+
+  // Prefer structured JSON commands block if embedded in SPEC.md (F1 + F6)
+  let structuredRun: string | undefined;
+  let structuredTest: string | undefined;
+  if (specMarkdown) {
+    const jsonFenceRegex = /```(?:json)?\s*([\s\S]*?)```/gi;
+    let match: RegExpExecArray | null;
+    while ((match = jsonFenceRegex.exec(specMarkdown)) !== null) {
+      const raw = match[1]?.trim();
+      if (!raw || !raw.startsWith('{')) continue;
+      try {
+        const parsed = JSON.parse(raw) as Record<string, unknown>;
+        const cmds =
+          parsed['nirman_commands'] && typeof parsed['nirman_commands'] === 'object'
+            ? (parsed['nirman_commands'] as Record<string, unknown>)
+            : parsed;
+        if (typeof cmds['run'] === 'string' && isRunnableCommandString(cmds['run'])) {
+          structuredRun = cmds['run'].trim();
+        }
+        if (typeof cmds['test'] === 'string' && isRunnableCommandString(cmds['test'])) {
+          structuredTest = cmds['test'].trim();
+        }
+      } catch {
+        // Ignore non-JSON fences
+      }
+    }
+  }
+
+  const rawRunCmd = structuredRun ?? extractSpecCommand(specMarkdown, 'Run|Start');
+  const rawTestCmd = structuredTest ?? extractSpecCommand(specMarkdown, 'Test|Verify');
 
   // Identify primary Python application file(s)
   const pyAppFiles = projectFiles.filter((f) => f.endsWith('.py') && !isPythonTestOrMetaFile(f));

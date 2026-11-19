@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import type {
   ChatCompletionChunk,
   ChatCompletionResult,
@@ -86,6 +87,8 @@ export class OpenAICompatibleClient implements ModelClient {
       messages: [...messages],
       temperature: options?.temperature ?? this.config.temperature ?? 0.2,
       stream: false,
+      ...(options?.responseFormat ? { response_format: options.responseFormat } : {}),
+      ...(options?.grammar ? { grammar: options.grammar } : {}),
     };
 
     const url = `${this.baseUrl}/chat/completions`;
@@ -211,11 +214,127 @@ export class OpenAICompatibleClient implements ModelClient {
     tools: readonly ToolDefinition[],
     options?: ChatOptions,
   ): Promise<ChatCompletionResult> {
+    if (this.config.toolMode === 'constrained') {
+      return this.chatWithToolsConstrained(messages, tools, options);
+    }
     if (this.config.toolMode === 'fallback') {
       return this.chatWithToolsFallback(messages, tools, options);
     }
 
     return this.chatWithToolsNative(messages, tools, options);
+  }
+
+  /**
+   * Builds a JSON Schema that constrains model output to either a valid tool call
+   * or a final text message, compatible with llama-server json_schema / GBNF decoding.
+   */
+  public static buildConstrainedToolSchema(
+    tools: readonly ToolDefinition[],
+  ): Record<string, unknown> {
+    const toolNames = tools.map((t) => t.name);
+    return {
+      type: 'object',
+      properties: {
+        action: { type: 'string', enum: ['tool_call', 'final'] },
+        name: { type: 'string', enum: toolNames.length > 0 ? toolNames : ['none'] },
+        arguments: { type: 'object' },
+        content: { type: 'string' },
+      },
+      required: ['action'],
+    };
+  }
+
+  private async chatWithToolsConstrained(
+    messages: readonly ChatMessage[],
+    tools: readonly ToolDefinition[],
+    options?: ChatOptions,
+  ): Promise<ChatCompletionResult> {
+    const toolList = tools
+      .map((t) => `- ${t.name}: ${t.description} | params: ${JSON.stringify(t.parameters)}`)
+      .join('\n');
+    const constrainedPrompt = `You MUST respond ONLY with a JSON object matching the schema.
+To call a tool: {"action":"tool_call","name":"<tool_name>","arguments":{...}}
+To finish without calling a tool: {"action":"final","content":"<brief summary>"}
+Available tools:\n${toolList}`;
+
+    const augmentedMessages: ChatMessage[] = [];
+    const firstMsg = messages[0];
+    if (firstMsg && firstMsg.role === 'system') {
+      augmentedMessages.push({
+        role: 'system',
+        content: `${firstMsg.content ?? ''}\n\n${constrainedPrompt}`,
+      });
+      augmentedMessages.push(...messages.slice(1));
+    } else {
+      augmentedMessages.push({ role: 'system', content: constrainedPrompt });
+      augmentedMessages.push(...messages);
+    }
+
+    const schema = OpenAICompatibleClient.buildConstrainedToolSchema(tools);
+    try {
+      const result = await this.chat(augmentedMessages, {
+        ...options,
+        responseFormat: {
+          type: 'json_schema',
+          json_schema: {
+            name: 'nirman_tool_turn',
+            strict: true,
+            schema,
+          },
+        },
+      });
+
+      const parsed = JSON.parse(result.rawText) as {
+        action?: string;
+        name?: string;
+        arguments?: Record<string, unknown>;
+        content?: string;
+      };
+
+      if (parsed.action === 'tool_call' && typeof parsed.name === 'string') {
+        const matchingTool = tools.find((t) => t.name === parsed.name);
+        if (matchingTool && parsed.arguments && typeof parsed.arguments === 'object') {
+          const val = validateSchema(parsed.arguments, matchingTool.parameters);
+          if (val.valid) {
+            return {
+              ...result,
+              parsedToolCalls: [
+                {
+                  id: `call_constrained_${crypto.randomUUID().slice(0, 8)}`,
+                  name: parsed.name,
+                  arguments: parsed.arguments,
+                  rawArguments: JSON.stringify(parsed.arguments),
+                },
+              ],
+            };
+          }
+        }
+      }
+
+      if (parsed.action === 'final') {
+        const finalText = typeof parsed.content === 'string' ? parsed.content : '';
+        return {
+          ...result,
+          message: { role: 'assistant', content: finalText },
+          rawText: finalText,
+          parsedToolCalls: [],
+        };
+      }
+
+      // If schema output didn't match an expected action, fall back to standard fallback parser
+      const fallbackCheck = parseFallbackToolCall(result.rawText, tools);
+      if (fallbackCheck.type === 'tool_call') {
+        return { ...result, parsedToolCalls: [fallbackCheck.call] };
+      }
+      return { ...result, parsedToolCalls: [] };
+    } catch (err) {
+      // If endpoint rejects response_format json_schema (e.g. older OpenAI-compat server), fall back
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('HTTP 400') || msg.includes('HTTP 422') || msg.includes('response_format')) {
+        return this.chatWithToolsFallback(messages, tools, options);
+      }
+      throw err;
+    }
   }
 
   private async chatWithToolsNative(

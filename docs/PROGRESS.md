@@ -468,3 +468,30 @@
   - VRAM Before Launch: `1,274 MiB`
   - VRAM During Execution: `6,127 MiB` (4,853 MiB allocated)
   - VRAM After Teardown: `1,274 MiB` (Exact return to baseline; 0 MiB leaked)
+
+
+## Audit & P0 Hardening Notes
+
+- **Status:** P0 Complete (Stopping after P0 per user decision; P1/P2/P3 queued).
+- **Decisions Recorded:**
+  - Sandbox: `LocalSandbox` relabelled honestly as `workspace-scoped (not isolated)` with a visible startup warning. `DockerSandbox` default + F12 shell re-check scheduled for P1.
+  - Supervisor (F5): Merged with Step 16 items 3–5 for P1. Icon and license items of Step 16 paused until P0 and P1 are complete.
+  - Training: Deferred until P2 eval results exist. Eval tasks strictly excluded from any future training dataset.
+  - Git Hygiene: `.gitignore` in `C:\Dev\Nirman` covers `test-runs/`, `.agent/`, `logs/`, `*.log`, `*.gguf`, `node_modules/`, `dist/`, `build/`. OneDrive copy left untouched for user archival.
+
+### P0 Status Matrix
+
+| Item | Status | Verification Method & Measured Result |
+| :--- | :--- | :--- |
+| **1(a) Baseline 20-Task Live Eval (pre-P0)** | **DONE** | Ran `evals` live on unmodified pre-P0 build (`evals/reports/baseline-p0/benchmark-report.md` & `.json`). Measured: **0/20 passed (0%)**, 0 avg steps, 0 avg tokens, 587.6s total, failure breakdown: `assertion_failed: 20` (root cause: `llama-server` launched without `GGML_BACKEND_PATH` fell back to CPU and hit 25s request timeouts; `EvalRunner` misclassified caught loop timeouts as `assertion_failed`). |
+| **1(b) Fix F15 + CI Hygiene Check** | **DONE** | Replaced `Math.random()` context meter in `apps/vscode-ext/src/extension-controller.ts` with deterministic token accounting + `usage.total_tokens` from `llama-server`. Removed all remaining `Math.random` calls (3 ID generators -> `crypto.randomUUID()` / sequence counter) and all 20 empty `catch {}` blocks across `packages/*/src` and `apps/*/src`. Added `scripts/code-hygiene.test.ts` and `npm run check:hygiene` (passes 2/2). |
+| **2 (Now) Honest `LocalSandbox` Relabeling** | **DONE** | Relabelled `LocalSandbox` (`packages/sandbox/src/local-sandbox.ts`) as `workspace-scoped (not isolated)` (`isolationMode` property) and added visible `console.warn` warning on use. Verified in `packages/core/src/p0-regressions.test.ts`. |
+| **1(c) F1 — Structured Commands & Executable Allow-List** | **DONE** | Added `PLAN_COMMANDS_JSON_SCHEMA` & structured `nirman_commands` JSON block in `packages/core/src/planner.ts`, `extractStructuredCommands()` and strict `ALLOWED_EXECUTABLES` / `isAllowedShellCommand()` allow-list in `packages/core/src/verifier.ts`. Verified against real failing `SPEC.md` logs (`b5smi`, `rz7su`, `zqn84`). |
+| **1(c) F2 — Deterministic `__init__.py` & Bidirectional `-t .`** | **DONE** | Added `ensurePythonPackageMarkers()` and bidirectional `-t .` fallback in `packages/core/src/verifier.ts`. Verified in `p0-regressions.test.ts` reproducing run `br0dn`. |
+| **1(c) F3 — Real Per-Step File & Syntax/Compile Verification** | **DONE** | Replaced vacuous `(workspace-verification)` with recursive source-file presence check (rejects test-only workspaces on app implementation steps) plus `python -m py_compile` and `node --check`. Verified in `p0-regressions.test.ts`. |
+| **1(c) F4 — Failure Classification & Fail-Fast** | **DONE** | Added `classifyVerificationFailure()` (`command_not_found`, `import_error`, `syntax_error`, `test_assertion`, `missing_file`, `timeout`, `unknown`) and fail-fast exit on `command_not_found` in `packages/core/src/agent-loop.ts`. Verified in `p0-regressions.test.ts`. |
+| **1(c) F7 — Reject Code-Prose Without Tool Call** | **DONE** | Added one-shot format re-prompt in `packages/core/src/agent-loop.ts` when model outputs fenced code with no tool call and no written files. Verified in `p0-regressions.test.ts` reproducing run `2tvz1`. |
+| **1(c) F6 — Constrained Output vs `--jinja` Native Comparison** | **DONE** | Added `toolMode: 'constrained'` (`response_format: { type: 'json_schema' }`) and `grammar` support to `OpenAICompatibleClient` (`packages/model/src/client.ts`). Live CUDA RTX 5050 comparison on `qwen2.5-coder-7b-instruct-q4_k_m.gguf`: `CONSTRAINED_JSON_SCHEMA` => **3913 ms**, 1/1 valid `call_constrained` `write_file`, **892 tokens**; `NATIVE_JINJA` (`--jinja`) => **2972 ms**, still fell back to `call_fallback` (text JSON), **1116 tokens**. |
+| **1(d) Real-Log Regression Suite** | **DONE** | Added `packages/core/src/p0-regressions.test.ts` (8/8 passing) covering F1, F2, F3, F4, F6, F7, and `LocalSandbox` relabeling using real run logs. |
+| **Post-P0 CUDA 20-Task Eval (Constrained Mode)** | **DONE** | Ran `evals` live on CUDA RTX 5050 (`evals/reports/post-p0-cuda/benchmark-report.md` & `.json`): **0/20 passed (0%)**, 0.7 avg steps, 491 avg tokens, 195.2s total (**0 timeouts**), breakdown: `assertion_failed: 14`, `stuck_loops: 6`. Measured finding for P2: under `action: "tool_call" | "final"`, the 7B model prematurely picks `"final"` on turn 1 with 0 tool calls on 11/20 tasks. |
+| **5 Git Hygiene (`.gitignore`)** | **DONE** | Added `build/` alongside `test-runs/`, `.agent/`, `logs/`, `*.log`, `*.gguf`, `node_modules/`, `dist/` in `C:\Dev\Nirman\.gitignore`. OneDrive copy untouched. |

@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { ArtifactStore, type AgentEvent } from '@nirman/artifacts';
@@ -62,7 +63,7 @@ export class RunManager {
    * Starts a new run in an isolated git worktree and sandbox.
    */
   public async startRun(params: StartRunParams): Promise<StartRunResult> {
-    const runId = params.runId ?? `run-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const runId = params.runId ?? `run-${Date.now()}-${crypto.randomUUID().slice(0, 5)}`;
 
     // Allocate an isolated worktree for this run
     const allocation = await this.worktreeManager.createWorktree(params.workspaceRoot, runId);

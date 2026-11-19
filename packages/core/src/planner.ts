@@ -9,6 +9,26 @@ export interface PlanGenerationResult {
 }
 
 /**
+ * JSON Schema for constrained decoding of the planner's structured commands block (F1 + F6).
+ */
+export const PLAN_COMMANDS_JSON_SCHEMA: Record<string, unknown> = {
+  type: 'object',
+  properties: {
+    nirman_commands: {
+      type: 'object',
+      properties: {
+        build: { type: ['string', 'null'] },
+        run: { type: ['string', 'null'] },
+        test: { type: ['string', 'null'] },
+        expectedFiles: { type: 'array', items: { type: 'string' } },
+      },
+      required: ['build', 'run', 'test', 'expectedFiles'],
+    },
+  },
+  required: ['nirman_commands'],
+};
+
+/**
  * Extracts JSON content from text (handles markdown code fences if present).
  */
 function extractJson(rawText?: string): unknown {
@@ -286,7 +306,17 @@ Create two comprehensive artifacts:
 2. SPEC.md:
    - Overview & Goals
    - Stack & Conventions
-   - Build / Test / Run Commands
+   - Build / Test / Run Commands — MUST include a valid JSON code block with exact shell commands (or null if none):
+     \`\`\`json
+     {
+       "nirman_commands": {
+         "build": null,
+         "run": "<exact terminal command to run the app>",
+         "test": "<exact terminal command to run tests>",
+         "expectedFiles": ["<main source file>", "<test file>"]
+       }
+     }
+     \`\`\`
 
 Separate the two files using the exact markers:
 === PLAN.MD ===

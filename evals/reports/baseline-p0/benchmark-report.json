@@ -1,0 +1,390 @@
+﻿{
+  "timestamp": "2026-11-19T14:54:25.940Z",
+  "benchmarks": [
+    {
+      "modelName": "qwen2.5-coder-7b-instruct-q4_k_m",
+      "provider": "Local llama-server (baseline pre-P0)",
+      "toolMode": "fallback",
+      "totalTasks": 20,
+      "passedTasks": 0,
+      "passRatePercent": 0,
+      "avgSteps": 0,
+      "avgTokens": 0,
+      "totalDurationMs": 587595,
+      "failureBreakdown": {
+        "none": 0,
+        "bad_edits": 0,
+        "wrong_tool_use": 0,
+        "context_overflow": 0,
+        "stuck_loops": 0,
+        "timeout": 0,
+        "assertion_failed": 20
+      },
+      "taskResults": [
+        {
+          "taskId": "task-01-cli-csv-parser",
+          "title": "CSV to JSON Converter CLI",
+          "category": "cli",
+          "passed": false,
+          "steps": 0,
+          "tokensUsed": 0,
+          "durationMs": 29708,
+          "failureCategory": "assertion_failed",
+          "failureReason": "Exit code 1 (expected 0). Output:  node:internal/modules/cjs/loader:1520\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module '<USER_HOME>\\AppData\\Local\\Temp\\nirman-eval-task-01-cli-csv-parser-wdHlTe\\parse.js'\r\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)\r\n    at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)\r\n    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)\r\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)\r\n    at Module._load (node:internal/modules/cjs/loader:1294:5)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\r\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\r\n    at node:internal/main/run_main_module:33:47 {\r\n  code: 'MODULE_NOT_FOUND',\r\n  requireStack: []\r\n}\r\n\r\nNode.js v24.19.0",
+          "checkResults": [
+            {
+              "check": "Parses input.csv and outputs valid JSON objects",
+              "passed": false,
+              "error": "Exit code 1 (expected 0). Output:  node:internal/modules/cjs/loader:1520\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module '<USER_HOME>\\AppData\\Local\\Temp\\nirman-eval-task-01-cli-csv-parser-wdHlTe\\parse.js'\r\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)\r\n    at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)\r\n    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)\r\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)\r\n    at Module._load (node:internal/modules/cjs/loader:1294:5)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\r\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\r\n    at node:internal/main/run_main_module:33:47 {\r\n  code: 'MODULE_NOT_FOUND',\r\n  requireStack: []\r\n}\r\n\r\nNode.js v24.19.0"
+            }
+          ]
+        },
+        {
+          "taskId": "task-02-cli-markdown-toc",
+          "title": "Markdown Table of Contents Generator",
+          "category": "cli",
+          "passed": false,
+          "steps": 0,
+          "tokensUsed": 0,
+          "durationMs": 27550,
+          "failureCategory": "assertion_failed",
+          "failureReason": "Exit code 1 (expected 0). Output:  node:internal/modules/cjs/loader:1520\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module '<USER_HOME>\\AppData\\Local\\Temp\\nirman-eval-task-02-cli-markdown-toc-CSqRiz\\toc.js'\r\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)\r\n    at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)\r\n    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)\r\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)\r\n    at Module._load (node:internal/modules/cjs/loader:1294:5)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\r\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\r\n    at node:internal/main/run_main_module:33:47 {\r\n  code: 'MODULE_NOT_FOUND',\r\n  requireStack: []\r\n}\r\n\r\nNode.js v24.19.0",
+          "checkResults": [
+            {
+              "check": "Generates markdown table of contents with anchors",
+              "passed": false,
+              "error": "Exit code 1 (expected 0). Output:  node:internal/modules/cjs/loader:1520\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module '<USER_HOME>\\AppData\\Local\\Temp\\nirman-eval-task-02-cli-markdown-toc-CSqRiz\\toc.js'\r\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)\r\n    at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)\r\n    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)\r\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)\r\n    at Module._load (node:internal/modules/cjs/loader:1294:5)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\r\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\r\n    at node:internal/main/run_main_module:33:47 {\r\n  code: 'MODULE_NOT_FOUND',\r\n  requireStack: []\r\n}\r\n\r\nNode.js v24.19.0"
+            }
+          ]
+        },
+        {
+          "taskId": "task-03-cli-env-validator",
+          "title": "Environment Variable Schema Validator",
+          "category": "cli",
+          "passed": false,
+          "steps": 0,
+          "tokensUsed": 0,
+          "durationMs": 27587,
+          "failureCategory": "assertion_failed",
+          "failureReason": "Exit code 1 (expected 0). Output:  node:internal/modules/cjs/loader:1520\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module '<USER_HOME>\\AppData\\Local\\Temp\\nirman-eval-task-03-cli-env-validator-T2jKNo\\env-check.js'\r\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)\r\n    at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)\r\n    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)\r\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)\r\n    at Module._load (node:internal/modules/cjs/loader:1294:5)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\r\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\r\n    at node:internal/main/run_main_module:33:47 {\r\n  code: 'MODULE_NOT_FOUND',\r\n  requireStack: []\r\n}\r\n\r\nNode.js v24.19.0",
+          "checkResults": [
+            {
+              "check": "Verifies .env against schema.json and exits 0",
+              "passed": false,
+              "error": "Exit code 1 (expected 0). Output:  node:internal/modules/cjs/loader:1520\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module '<USER_HOME>\\AppData\\Local\\Temp\\nirman-eval-task-03-cli-env-validator-T2jKNo\\env-check.js'\r\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)\r\n    at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)\r\n    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)\r\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)\r\n    at Module._load (node:internal/modules/cjs/loader:1294:5)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\r\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\r\n    at node:internal/main/run_main_module:33:47 {\r\n  code: 'MODULE_NOT_FOUND',\r\n  requireStack: []\r\n}\r\n\r\nNode.js v24.19.0"
+            }
+          ]
+        },
+        {
+          "taskId": "task-04-cli-log-analyzer",
+          "title": "Web Server Access Log Analyzer",
+          "category": "cli",
+          "passed": false,
+          "steps": 0,
+          "tokensUsed": 0,
+          "durationMs": 27403,
+          "failureCategory": "assertion_failed",
+          "failureReason": "Exit code 1 (expected 0). Output:  node:internal/modules/cjs/loader:1520\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module '<USER_HOME>\\AppData\\Local\\Temp\\nirman-eval-task-04-cli-log-analyzer-QOZwHK\\analyze.js'\r\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)\r\n    at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)\r\n    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)\r\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)\r\n    at Module._load (node:internal/modules/cjs/loader:1294:5)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\r\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\r\n    at node:internal/main/run_main_module:33:47 {\r\n  code: 'MODULE_NOT_FOUND',\r\n  requireStack: []\r\n}\r\n\r\nNode.js v24.19.0",
+          "checkResults": [
+            {
+              "check": "Aggregates access log requests and outputs status statistics",
+              "passed": false,
+              "error": "Exit code 1 (expected 0). Output:  node:internal/modules/cjs/loader:1520\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module '<USER_HOME>\\AppData\\Local\\Temp\\nirman-eval-task-04-cli-log-analyzer-QOZwHK\\analyze.js'\r\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)\r\n    at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)\r\n    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)\r\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)\r\n    at Module._load (node:internal/modules/cjs/loader:1294:5)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\r\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\r\n    at node:internal/main/run_main_module:33:47 {\r\n  code: 'MODULE_NOT_FOUND',\r\n  requireStack: []\r\n}\r\n\r\nNode.js v24.19.0"
+            }
+          ]
+        },
+        {
+          "taskId": "task-05-cli-uuid-generator",
+          "title": "UUID and Slug Generator CLI",
+          "category": "cli",
+          "passed": false,
+          "steps": 0,
+          "tokensUsed": 0,
+          "durationMs": 27442,
+          "failureCategory": "assertion_failed",
+          "failureReason": "Exit code 1 (expected 0). Output:  node:internal/modules/cjs/loader:1520\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module '<USER_HOME>\\AppData\\Local\\Temp\\nirman-eval-task-05-cli-uuid-generator-q3JgYm\\uuid-gen.js'\r\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)\r\n    at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)\r\n    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)\r\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)\r\n    at Module._load (node:internal/modules/cjs/loader:1294:5)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\r\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\r\n    at node:internal/main/run_main_module:33:47 {\r\n  code: 'MODULE_NOT_FOUND',\r\n  requireStack: []\r\n}\r\n\r\nNode.js v24.19.0",
+          "checkResults": [
+            {
+              "check": "Generates normalized URL slug from input string",
+              "passed": false,
+              "error": "Exit code 1 (expected 0). Output:  node:internal/modules/cjs/loader:1520\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module '<USER_HOME>\\AppData\\Local\\Temp\\nirman-eval-task-05-cli-uuid-generator-q3JgYm\\uuid-gen.js'\r\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)\r\n    at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)\r\n    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)\r\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)\r\n    at Module._load (node:internal/modules/cjs/loader:1294:5)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\r\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\r\n    at node:internal/main/run_main_module:33:47 {\r\n  code: 'MODULE_NOT_FOUND',\r\n  requireStack: []\r\n}\r\n\r\nNode.js v24.19.0"
+            }
+          ]
+        },
+        {
+          "taskId": "task-06-cli-word-frequency",
+          "title": "Word Frequency Counter",
+          "category": "cli",
+          "passed": false,
+          "steps": 0,
+          "tokensUsed": 0,
+          "durationMs": 27489,
+          "failureCategory": "assertion_failed",
+          "failureReason": "Exit code 1 (expected 0). Output:  node:internal/modules/cjs/loader:1520\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module '<USER_HOME>\\AppData\\Local\\Temp\\nirman-eval-task-06-cli-word-frequency-vt1k6y\\word-freq.js'\r\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)\r\n    at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)\r\n    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)\r\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)\r\n    at Module._load (node:internal/modules/cjs/loader:1294:5)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\r\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\r\n    at node:internal/main/run_main_module:33:47 {\r\n  code: 'MODULE_NOT_FOUND',\r\n  requireStack: []\r\n}\r\n\r\nNode.js v24.19.0",
+          "checkResults": [
+            {
+              "check": "Outputs word frequency rank as JSON",
+              "passed": false,
+              "error": "Exit code 1 (expected 0). Output:  node:internal/modules/cjs/loader:1520\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module '<USER_HOME>\\AppData\\Local\\Temp\\nirman-eval-task-06-cli-word-frequency-vt1k6y\\word-freq.js'\r\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)\r\n    at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)\r\n    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)\r\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)\r\n    at Module._load (node:internal/modules/cjs/loader:1294:5)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\r\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\r\n    at node:internal/main/run_main_module:33:47 {\r\n  code: 'MODULE_NOT_FOUND',\r\n  requireStack: []\r\n}\r\n\r\nNode.js v24.19.0"
+            }
+          ]
+        },
+        {
+          "taskId": "task-07-api-todo-crud",
+          "title": "In-Memory Todo REST API",
+          "category": "api",
+          "passed": false,
+          "steps": 0,
+          "tokensUsed": 0,
+          "durationMs": 33719,
+          "failureCategory": "assertion_failed",
+          "failureReason": "Server failed to start or bind to port 4001 within timeout",
+          "checkResults": [
+            {
+              "check": "GET /todos returns JSON array with status 200",
+              "passed": false,
+              "error": "Server failed to start or bind to port 4001 within timeout"
+            }
+          ]
+        },
+        {
+          "taskId": "task-08-api-auth-token",
+          "title": "Token Authentication Service",
+          "category": "api",
+          "passed": false,
+          "steps": 0,
+          "tokensUsed": 0,
+          "durationMs": 33587,
+          "failureCategory": "assertion_failed",
+          "failureReason": "Server failed to start or bind to port 4002 within timeout",
+          "checkResults": [
+            {
+              "check": "GET /profile returns 401 Unauthorized without auth header",
+              "passed": false,
+              "error": "Server failed to start or bind to port 4002 within timeout"
+            }
+          ]
+        },
+        {
+          "taskId": "task-09-api-url-shortener",
+          "title": "URL Shortener API",
+          "category": "api",
+          "passed": false,
+          "steps": 0,
+          "tokensUsed": 0,
+          "durationMs": 33820,
+          "failureCategory": "assertion_failed",
+          "failureReason": "Server failed to start or bind to port 4003 within timeout",
+          "checkResults": [
+            {
+              "check": "GET /health returns status ok",
+              "passed": false,
+              "error": "Server failed to start or bind to port 4003 within timeout"
+            }
+          ]
+        },
+        {
+          "taskId": "task-10-api-rate-limiter",
+          "title": "Rate Limiter API Gateway",
+          "category": "api",
+          "passed": false,
+          "steps": 0,
+          "tokensUsed": 0,
+          "durationMs": 33491,
+          "failureCategory": "assertion_failed",
+          "failureReason": "Server failed to start or bind to port 4004 within timeout",
+          "checkResults": [
+            {
+              "check": "GET /api/data returns allowed: true with status 200",
+              "passed": false,
+              "error": "Server failed to start or bind to port 4004 within timeout"
+            }
+          ]
+        },
+        {
+          "taskId": "task-11-api-notes-search",
+          "title": "Notes API with Keyword Search",
+          "category": "api",
+          "passed": false,
+          "steps": 0,
+          "tokensUsed": 0,
+          "durationMs": 33486,
+          "failureCategory": "assertion_failed",
+          "failureReason": "Server failed to start or bind to port 4005 within timeout",
+          "checkResults": [
+            {
+              "check": "GET /notes returns 200 OK with notes array",
+              "passed": false,
+              "error": "Server failed to start or bind to port 4005 within timeout"
+            }
+          ]
+        },
+        {
+          "taskId": "task-12-api-health-metrics",
+          "title": "Server Health & Metrics API",
+          "category": "api",
+          "passed": false,
+          "steps": 0,
+          "tokensUsed": 0,
+          "durationMs": 33563,
+          "failureCategory": "assertion_failed",
+          "failureReason": "Server failed to start or bind to port 4006 within timeout",
+          "checkResults": [
+            {
+              "check": "GET /health returns healthy status",
+              "passed": false,
+              "error": "Server failed to start or bind to port 4006 within timeout"
+            }
+          ]
+        },
+        {
+          "taskId": "task-13-ui-calculator",
+          "title": "Calculator Web Interface",
+          "category": "ui",
+          "passed": false,
+          "steps": 0,
+          "tokensUsed": 0,
+          "durationMs": 27210,
+          "failureCategory": "assertion_failed",
+          "failureReason": "Could not read UI file \"index.html\": ENOENT: no such file or directory, open '<USER_HOME>\\AppData\\Local\\Temp\\nirman-eval-task-13-ui-calculator-vynadO\\index.html'",
+          "checkResults": [
+            {
+              "check": "index.html contains calculator buttons, operators, and display",
+              "passed": false,
+              "error": "Could not read UI file \"index.html\": ENOENT: no such file or directory, open '<USER_HOME>\\AppData\\Local\\Temp\\nirman-eval-task-13-ui-calculator-vynadO\\index.html'"
+            }
+          ]
+        },
+        {
+          "taskId": "task-14-ui-stopwatch",
+          "title": "Interactive Digital Stopwatch",
+          "category": "ui",
+          "passed": false,
+          "steps": 0,
+          "tokensUsed": 0,
+          "durationMs": 27198,
+          "failureCategory": "assertion_failed",
+          "failureReason": "Could not read UI file \"index.html\": ENOENT: no such file or directory, open '<USER_HOME>\\AppData\\Local\\Temp\\nirman-eval-task-14-ui-stopwatch-SkC8Xc\\index.html'",
+          "checkResults": [
+            {
+              "check": "index.html contains stopwatch controls (start, pause, reset)",
+              "passed": false,
+              "error": "Could not read UI file \"index.html\": ENOENT: no such file or directory, open '<USER_HOME>\\AppData\\Local\\Temp\\nirman-eval-task-14-ui-stopwatch-SkC8Xc\\index.html'"
+            }
+          ]
+        },
+        {
+          "taskId": "task-15-ui-color-picker",
+          "title": "Color Palette & Hex Converter UI",
+          "category": "ui",
+          "passed": false,
+          "steps": 0,
+          "tokensUsed": 0,
+          "durationMs": 27441,
+          "failureCategory": "assertion_failed",
+          "failureReason": "Could not read UI file \"index.html\": ENOENT: no such file or directory, open '<USER_HOME>\\AppData\\Local\\Temp\\nirman-eval-task-15-ui-color-picker-H1t3fc\\index.html'",
+          "checkResults": [
+            {
+              "check": "index.html contains color picker and preview elements",
+              "passed": false,
+              "error": "Could not read UI file \"index.html\": ENOENT: no such file or directory, open '<USER_HOME>\\AppData\\Local\\Temp\\nirman-eval-task-15-ui-color-picker-H1t3fc\\index.html'"
+            }
+          ]
+        },
+        {
+          "taskId": "task-16-ui-shopping-cart",
+          "title": "E-Commerce Shopping Cart Widget",
+          "category": "ui",
+          "passed": false,
+          "steps": 0,
+          "tokensUsed": 0,
+          "durationMs": 27285,
+          "failureCategory": "assertion_failed",
+          "failureReason": "Could not read UI file \"index.html\": ENOENT: no such file or directory, open '<USER_HOME>\\AppData\\Local\\Temp\\nirman-eval-task-16-ui-shopping-cart-EbdcOo\\index.html'",
+          "checkResults": [
+            {
+              "check": "index.html contains shopping cart item list and total price",
+              "passed": false,
+              "error": "Could not read UI file \"index.html\": ENOENT: no such file or directory, open '<USER_HOME>\\AppData\\Local\\Temp\\nirman-eval-task-16-ui-shopping-cart-EbdcOo\\index.html'"
+            }
+          ]
+        },
+        {
+          "taskId": "task-17-ui-accordion-faq",
+          "title": "Accessible FAQ Accordion Component",
+          "category": "ui",
+          "passed": false,
+          "steps": 0,
+          "tokensUsed": 0,
+          "durationMs": 27289,
+          "failureCategory": "assertion_failed",
+          "failureReason": "Could not read UI file \"index.html\": ENOENT: no such file or directory, open '<USER_HOME>\\AppData\\Local\\Temp\\nirman-eval-task-17-ui-accordion-faq-gJxpsY\\index.html'",
+          "checkResults": [
+            {
+              "check": "index.html contains accordion FAQ questions and answers",
+              "passed": false,
+              "error": "Could not read UI file \"index.html\": ENOENT: no such file or directory, open '<USER_HOME>\\AppData\\Local\\Temp\\nirman-eval-task-17-ui-accordion-faq-gJxpsY\\index.html'"
+            }
+          ]
+        },
+        {
+          "taskId": "task-18-ui-form-validator",
+          "title": "Registration Form with Live Validation",
+          "category": "ui",
+          "passed": false,
+          "steps": 0,
+          "tokensUsed": 0,
+          "durationMs": 27279,
+          "failureCategory": "assertion_failed",
+          "failureReason": "Could not read UI file \"index.html\": ENOENT: no such file or directory, open '<USER_HOME>\\AppData\\Local\\Temp\\nirman-eval-task-18-ui-form-validator-vuOHC0\\index.html'",
+          "checkResults": [
+            {
+              "check": "index.html contains registration form inputs and validation error elements",
+              "passed": false,
+              "error": "Could not read UI file \"index.html\": ENOENT: no such file or directory, open '<USER_HOME>\\AppData\\Local\\Temp\\nirman-eval-task-18-ui-form-validator-vuOHC0\\index.html'"
+            }
+          ]
+        },
+        {
+          "taskId": "task-19-algo-lru-cache",
+          "title": "LRU Cache Data Structure",
+          "category": "algo",
+          "passed": false,
+          "steps": 0,
+          "tokensUsed": 0,
+          "durationMs": 27465,
+          "failureCategory": "assertion_failed",
+          "failureReason": "Exit code 1 (expected 0). Output:  node:internal/modules/cjs/loader:1520\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module './lru.js'\r\nRequire stack:\r\n- <USER_HOME>\\AppData\\Local\\Temp\\nirman-eval-task-19-algo-lru-cache-b2ZlQD\\test-lru.js\r\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)\r\n    at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)\r\n    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)\r\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)\r\n    at Module._load (node:internal/modules/cjs/loader:1294:5)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\r\n    at Module.require (node:internal/modules/cjs/loader:1617:12)\r\n    at require (node:internal/modules/helpers:153:16)\r\n    at Object.<anonymous> (<USER_HOME>\\AppData\\Local\\Temp\\nirman-eval-task-19-algo-lru-cache-b2ZlQD\\test-lru.js:2:22)\r\n    at Module._compile (node:internal/modules/cjs/loader:1872:14) {\r\n  code: 'MODULE_NOT_FOUND',\r\n  requireStack: [\r\n    'C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\nirman-eval-task-19-algo-lru-cache-b2ZlQD\\\\test-lru.js'\r\n  ]\r\n}\r\n\r\nNode.js v24.19.0",
+          "checkResults": [
+            {
+              "check": "Verifies LRU cache put, get, and eviction semantics",
+              "passed": false,
+              "error": "Exit code 1 (expected 0). Output:  node:internal/modules/cjs/loader:1520\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module './lru.js'\r\nRequire stack:\r\n- <USER_HOME>\\AppData\\Local\\Temp\\nirman-eval-task-19-algo-lru-cache-b2ZlQD\\test-lru.js\r\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)\r\n    at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)\r\n    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)\r\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)\r\n    at Module._load (node:internal/modules/cjs/loader:1294:5)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\r\n    at Module.require (node:internal/modules/cjs/loader:1617:12)\r\n    at require (node:internal/modules/helpers:153:16)\r\n    at Object.<anonymous> (<USER_HOME>\\AppData\\Local\\Temp\\nirman-eval-task-19-algo-lru-cache-b2ZlQD\\test-lru.js:2:22)\r\n    at Module._compile (node:internal/modules/cjs/loader:1872:14) {\r\n  code: 'MODULE_NOT_FOUND',\r\n  requireStack: [\r\n    'C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\nirman-eval-task-19-algo-lru-cache-b2ZlQD\\\\test-lru.js'\r\n  ]\r\n}\r\n\r\nNode.js v24.19.0"
+            }
+          ]
+        },
+        {
+          "taskId": "task-20-algo-event-emitter",
+          "title": "Custom Event Emitter",
+          "category": "algo",
+          "passed": false,
+          "steps": 0,
+          "tokensUsed": 0,
+          "durationMs": 27502,
+          "failureCategory": "assertion_failed",
+          "failureReason": "Exit code 1 (expected 0). Output:  node:internal/modules/cjs/loader:1520\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module './emitter.js'\r\nRequire stack:\r\n- <USER_HOME>\\AppData\\Local\\Temp\\nirman-eval-task-20-algo-event-emitter-Xfk7An\\test-emitter.js\r\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)\r\n    at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)\r\n    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)\r\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)\r\n    at Module._load (node:internal/modules/cjs/loader:1294:5)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\r\n    at Module.require (node:internal/modules/cjs/loader:1617:12)\r\n    at require (node:internal/modules/helpers:153:16)\r\n    at Object.<anonymous> (<USER_HOME>\\AppData\\Local\\Temp\\nirman-eval-task-20-algo-event-emitter-Xfk7An\\test-emitter.js:2:26)\r\n    at Module._compile (node:internal/modules/cjs/loader:1872:14) {\r\n  code: 'MODULE_NOT_FOUND',\r\n  requireStack: [\r\n    'C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\nirman-eval-task-20-algo-event-emitter-Xfk7An\\\\test-emitter.js'\r\n  ]\r\n}\r\n\r\nNode.js v24.19.0",
+          "checkResults": [
+            {
+              "check": "Verifies EventEmitter on, emit, and once behavior",
+              "passed": false,
+              "error": "Exit code 1 (expected 0). Output:  node:internal/modules/cjs/loader:1520\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module './emitter.js'\r\nRequire stack:\r\n- <USER_HOME>\\AppData\\Local\\Temp\\nirman-eval-task-20-algo-event-emitter-Xfk7An\\test-emitter.js\r\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)\r\n    at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)\r\n    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)\r\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)\r\n    at Module._load (node:internal/modules/cjs/loader:1294:5)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\r\n    at Module.require (node:internal/modules/cjs/loader:1617:12)\r\n    at require (node:internal/modules/helpers:153:16)\r\n    at Object.<anonymous> (<USER_HOME>\\AppData\\Local\\Temp\\nirman-eval-task-20-algo-event-emitter-Xfk7An\\test-emitter.js:2:26)\r\n    at Module._compile (node:internal/modules/cjs/loader:1872:14) {\r\n  code: 'MODULE_NOT_FOUND',\r\n  requireStack: [\r\n    'C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\nirman-eval-task-20-algo-event-emitter-Xfk7An\\\\test-emitter.js'\r\n  ]\r\n}\r\n\r\nNode.js v24.19.0"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "nextImprovements": [
+    "Baseline pre-P0 measurement only."
+  ]
+}

@@ -35,6 +35,12 @@ export class ExtensionController {
   private activeRun: RunRecord | null = null;
   private isConnected = false;
   private unsubscribeEvents?: (() => void) | undefined;
+  private estimatedContextTokens = 0;
+
+  private logDiagnostic(context: string, err: unknown): void {
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn(`[NIRMAN:${context}] ${message}`);
+  }
 
   constructor(options: ExtensionControllerOptions) {
     this.vscode = options.vscode;
@@ -97,7 +103,9 @@ export class ExtensionController {
             break;
           }
         }
-      } catch {}
+      } catch (err) {
+      this.logDiagnostic('extension-controller', err);
+    }
     }
 
     this.chatView.setMessages(loaded ?? [], folderName);
@@ -112,11 +120,15 @@ export class ExtensionController {
     try {
       fs.mkdirSync(path.dirname(localPath), { recursive: true });
       fs.writeFileSync(localPath, serialized, 'utf-8');
-    } catch {}
+    } catch (err) {
+      this.logDiagnostic('extension-controller', err);
+    }
     try {
       fs.mkdirSync(path.dirname(globalPath), { recursive: true });
       fs.writeFileSync(globalPath, serialized, 'utf-8');
-    } catch {}
+    } catch (err) {
+      this.logDiagnostic('extension-controller', err);
+    }
   }
 
   public clearWorkspaceChatHistory(): void {
@@ -126,10 +138,14 @@ export class ExtensionController {
     const { localPath, globalPath } = this.getHistoryFilePaths(workspaceRoot);
     try {
       if (fs.existsSync(localPath)) fs.unlinkSync(localPath);
-    } catch {}
+    } catch (err) {
+      this.logDiagnostic('extension-controller', err);
+    }
     try {
       if (fs.existsSync(globalPath)) fs.unlinkSync(globalPath);
-    } catch {}
+    } catch (err) {
+      this.logDiagnostic('extension-controller', err);
+    }
   }
 
   private appendChat(sender: 'user' | 'assistant' | 'system', content: string): void {
@@ -192,7 +208,9 @@ export class ExtensionController {
       };
       walk(workspaceRoot);
       filesSummary = collected.join(', ');
-    } catch {}
+    } catch (err) {
+      this.logDiagnostic('extension-controller', err);
+    }
 
     let specSnippet = '';
     try {
@@ -203,7 +221,9 @@ export class ExtensionController {
       } else if (fs.existsSync(specPath)) {
         specSnippet = fs.readFileSync(specPath, 'utf-8').slice(0, 1500);
       }
-    } catch {}
+    } catch (err) {
+      this.logDiagnostic('extension-controller', err);
+    }
 
     const recentMsgs = this.chatView
       .getMessages()
@@ -249,7 +269,15 @@ export class ExtensionController {
 
     const data = (await response.json()) as {
       choices?: Array<{ message?: { content?: string } }>;
+      usage?: { total_tokens?: number };
     };
+    if (typeof data.usage?.total_tokens === 'number') {
+      this.estimatedContextTokens = data.usage.total_tokens;
+      this.statusBar.updateContextUsage(
+        Math.min(this.config.contextWindowLimit, this.estimatedContextTokens),
+        this.config.contextWindowLimit,
+      );
+    }
     const reply = data.choices?.[0]?.message?.content?.trim();
     if (reply) {
       this.appendChat('assistant', reply);
@@ -268,7 +296,9 @@ export class ExtensionController {
           this.config.serverToken = pids.token;
           this.client.setToken(pids.token);
         }
-      } catch {}
+      } catch (err) {
+      this.logDiagnostic('extension-controller', err);
+    }
     }
     await this.client.connect();
     this.isConnected = true;
@@ -353,7 +383,9 @@ export class ExtensionController {
         const fullPath = path.isAbsolute(filePath) ? filePath : path.join(baseDir, filePath);
         try {
           await this.vscode.commands.executeCommand('vscode.open', this.vscode.Uri.file(fullPath));
-        } catch {}
+        } catch (err) {
+      this.logDiagnostic('extension-controller', err);
+    }
       },
       onClearChat: async () => {
         this.clearWorkspaceChatHistory();
@@ -506,6 +538,12 @@ export class ExtensionController {
     const workspaceFolder = this.vscode.workspace.workspaceFolders?.[0];
     const workspaceRoot =
       customWorkspaceRoot || (workspaceFolder ? workspaceFolder.uri.fsPath : process.cwd());
+
+    this.estimatedContextTokens = Math.ceil(task.length / 4) + 250;
+    this.statusBar.updateContextUsage(
+      Math.min(this.config.contextWindowLimit, this.estimatedContextTokens),
+      this.config.contextWindowLimit,
+    );
 
     this.appendChat('user', task);
     this.appendChat(
@@ -701,7 +739,9 @@ export class ExtensionController {
         }
       };
       copyRecursive(worktreePath, repoRoot);
-    } catch {}
+    } catch (err) {
+      this.logDiagnostic('extension-controller', err);
+    }
   }
 
   /**
@@ -720,9 +760,10 @@ export class ExtensionController {
         if (!isRawToolJson) {
           this.appendChat('assistant', event.content);
         }
-        // Estimate token count update
+        // Deterministic token count update derived from actual message content length
+        this.estimatedContextTokens += Math.max(1, Math.ceil(event.content.length / 4));
         this.statusBar.updateContextUsage(
-          Math.min(this.config.contextWindowLimit, Math.floor(Math.random() * 2000) + 1200),
+          Math.min(this.config.contextWindowLimit, this.estimatedContextTokens),
           this.config.contextWindowLimit,
         );
         break;
@@ -767,14 +808,18 @@ export class ExtensionController {
             if (fs.existsSync(candidatePlanPath)) {
               planMarkdown = fs.readFileSync(candidatePlanPath, 'utf-8');
             }
-          } catch {}
+          } catch (err) {
+      this.logDiagnostic('extension-controller', err);
+    }
         }
         if (candidateSpecPath) {
           try {
             if (fs.existsSync(candidateSpecPath)) {
               specMarkdown = fs.readFileSync(candidateSpecPath, 'utf-8');
             }
-          } catch {}
+          } catch (err) {
+      this.logDiagnostic('extension-controller', err);
+    }
         }
 
         // Strip any raw source code blocks so the implementation plan explains workflow & architecture
@@ -813,7 +858,9 @@ export class ExtensionController {
             const repoPlanPath = path.join(this.activeRun.repoRoot, 'PLAN.md');
             fs.writeFileSync(repoPlanPath, cleanPlanMarkdown, 'utf-8');
             this.syncWorktreeToRepo();
-          } catch {}
+          } catch (err) {
+      this.logDiagnostic('extension-controller', err);
+    }
         }
         break;
       }
@@ -847,7 +894,9 @@ export class ExtensionController {
                 fs.writeFileSync(repoWalkthrough, walkthroughText, 'utf-8');
               }
             }
-          } catch {}
+          } catch (err) {
+      this.logDiagnostic('extension-controller', err);
+    }
         }
         this.appendChat(
           'assistant',

@@ -1,4 +1,5 @@
 import { validateSchema } from './schema.js';
+import crypto from 'node:crypto';
 import type { ParsedToolCall, ToolDefinition } from './types.js';
 
 export type FallbackParseResult =
@@ -139,7 +140,7 @@ export function parseFallbackToolCall(
     };
   }
 
-  const callId = `call_fallback_${Math.random().toString(36).slice(2, 10)}`;
+  const callId = `call_fallback_${crypto.randomUUID().slice(0, 8)}`;
 
   return {
     type: 'tool_call',

@@ -364,6 +364,7 @@ export async function* runAgentLoop(
       // Task Fix Loop (capped retries)
       while (!taskFinished) {
         let attemptTurnCount = 0;
+        let proseRepromptCount = 0;
         let lastToolCallsSignature = '';
         const seenWriteOrListSignatures = new Set<string>();
         const writtenFilesInStep = new Set<string>();
@@ -685,6 +686,23 @@ export async function* runAgentLoop(
 
             taintTracker.advanceTurn();
           } else {
+            // F7: Reject responses containing code blocks with no tool call when no files have been written yet
+            const rawReply = response.message.content ?? '';
+            const hasFencedCode = /```[a-zA-Z0-9_-]*\n[\s\S]*?```/.test(rawReply);
+            if (hasFencedCode && writtenFilesInStep.size === 0 && proseRepromptCount < 1) {
+              proseRepromptCount++;
+              taskMessages.push({
+                role: 'assistant',
+                content: response.message.content,
+              });
+              taskMessages.push({
+                role: 'user',
+                content:
+                  'FORMAT ERROR: You pasted code in markdown prose instead of calling a tool. Do NOT paste code in prose — call the `write_file` tool now with the file path and full file content.',
+              });
+              continue;
+            }
+
             // Model concluded turn without calling tools
             taskMessages.push({
               role: 'assistant',
@@ -705,7 +723,10 @@ export async function* runAgentLoop(
         options.onEvent?.(verifyStartEvt);
         yield verifyStartEvt;
 
-        const verifyRes = await runVerification(verifyCommands, sandbox, verificationTimeoutMs);
+        const verifyRes = await runVerification(verifyCommands, sandbox, verificationTimeoutMs, {
+          taskTitle: task.title,
+          taskDescription: task.description,
+        });
 
         if (verifyRes.success) {
           const verifyFinEvt = createVerificationFinishedEvent(
@@ -736,15 +757,16 @@ export async function* runAgentLoop(
 
           taskFinished = true;
         } else {
-          // Verification failed! Parse relevant error
+          // Verification failed! Parse relevant error & classify failure (F4)
           const relevantError = parseRelevantError(verifyRes.output, verifyRes.error);
+          const failureClass = verifyRes.failureClass ?? 'unknown';
           const verifyFinEvt = createVerificationFinishedEvent(
             store.runId,
             task.id,
             verifyCmdStr,
             false,
             verifyRes.output,
-            relevantError,
+            `[${failureClass}] ${relevantError}`,
           );
           await store.appendEvent(verifyFinEvt);
           options.onEvent?.(verifyFinEvt);
@@ -753,37 +775,44 @@ export async function* runAgentLoop(
           const currentRetries: number = (task.retries ?? 0) + 1;
           task.retries = currentRetries;
 
-          if (currentRetries <= maxRetriesPerTask) {
+          // F4: Fail fast on non-code command_not_found errors instead of burning retries
+          const isFailFast = failureClass === 'command_not_found';
+
+          if (!isFailFast && currentRetries <= maxRetriesPerTask) {
             const retryEvt = createTaskRetryEvent(
               store.runId,
               task.id,
               currentRetries,
               maxRetriesPerTask,
-              relevantError,
+              `[${failureClass}] ${relevantError}`,
             );
             await store.appendEvent(retryEvt);
             options.onEvent?.(retryEvt);
             yield retryEvt;
 
-            // Feed ONLY relevant error into the model's small context window
+            // Feed ONLY relevant error + failure class into the model's small context window
             taskMessages.push({
               role: 'user',
-              content: `Verification command failed: "${verifyRes.command}"\nError:\n${relevantError}\nPlease analyze this error, inspect files if needed, and fix the code.`,
+              content: `Verification command failed (${failureClass}): "${verifyRes.command}"\nError:\n${relevantError}\nPlease analyze this error, inspect files if needed, and fix the code using tools.`,
             });
           } else {
-            // Retries exhausted! Mark blocked
+            // Retries exhausted or fail-fast non-code error! Mark blocked
             task.status = 'blocked';
-            task.error = relevantError;
+            task.error = `[${failureClass}] ${relevantError}`;
             await store.updateTaskStatus(task.id, 'blocked', {
-              error: relevantError,
+              error: task.error,
               retries: currentRetries,
             });
+
+            const blockedMsg = isFailFast
+              ? `Fail-fast (${failureClass}): ${relevantError.slice(0, 120)}`
+              : `Exhausted ${maxRetriesPerTask} retries (${failureClass}). Error: ${relevantError.slice(0, 100)}`;
 
             const blockedEvt = createTaskStatusChangedEvent(
               store.runId,
               task.id,
               'blocked',
-              `Exhausted ${maxRetriesPerTask} retries. Error: ${relevantError.slice(0, 100)}`,
+              blockedMsg,
             );
             await store.appendEvent(blockedEvt);
             options.onEvent?.(blockedEvt);
@@ -794,7 +823,7 @@ export async function* runAgentLoop(
             await store.writeTaskDiff(task.id, taskPatch);
 
             finalStatus = 'blocked';
-            finishReason = `Task ${task.id} blocked: ${relevantError.slice(0, 100)}`;
+            finishReason = `Task ${task.id} blocked (${failureClass}): ${relevantError.slice(0, 100)}`;
             taskFinished = true;
             break;
           }
